@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_config.dart';
+import '../storage/secure_token_storage.dart';
 
 class ApiClient {
   late final Dio _dio;
@@ -22,15 +23,13 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          if (kDebugMode) {
-            print('REQUEST[${options.method}] => PATH: ${options.path}');
-          }
-          return handler.next(options);
+          _addAuthTokenAndContinue(options, handler);
         },
         onResponse: (response, handler) {
           if (kDebugMode) {
-            print(
-                'RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
+            debugPrint(
+              'RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}',
+            );
           }
           return handler.next(response);
         },
@@ -43,6 +42,22 @@ class ApiClient {
         },
       ),
     );
+  }
+
+  Future<void> _addAuthTokenAndContinue(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    final token = await SecureTokenStorage.readAuthToken();
+    if (token != null && token.isNotEmpty) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+
+    if (kDebugMode) {
+      debugPrint('REQUEST[${options.method}] => PATH: ${options.path}');
+    }
+
+    handler.next(options);
   }
 
   Dio get dio => _dio;

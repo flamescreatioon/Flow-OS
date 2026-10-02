@@ -21,13 +21,9 @@ class User extends Authenticatable
     public $incrementing = false;
 
     protected $fillable = [
-        'id',
-        'organization_id',
         'name',
         'email',
         'password',
-        'role',
-        'is_active',
     ];
 
     protected $hidden = [

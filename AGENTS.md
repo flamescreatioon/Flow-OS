@@ -199,6 +199,12 @@ Business calculations, validations, workflows → Application/Domain layer.
 - Rotate compromised secrets immediately
 - Do not log passwords or authentication tokens
 - Do not print sensitive environment values
+- Tenant identifiers select context only; authorization requires an active membership and permission check.
+- Never mass-assign client input into tenant, role, membership, approval, or security fields.
+- Client financial totals, permission snapshots, and clocks are untrusted; the server re-authorizes and recalculates.
+- Browser tokens must not use localStorage/sessionStorage; mobile/desktop tokens require platform secure storage.
+- Never log Authorization headers, bearer tokens, cookies, passwords, secrets, or unnecessary sensitive personal data.
+- Security changes require meaningful negative-path tests for authorization, tenancy, and cleanup behavior.
 
 ---
 

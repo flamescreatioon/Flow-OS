@@ -1,0 +1,45 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '23 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build_mode: none
+          - language: csharp
+            build_mode: manual
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build_mode }}
+      - name: Build web application for analysis
+        if: matrix.language == 'javascript-typescript'
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run build
+      - name: Build desktop solution for analysis
+        if: matrix.language == 'csharp'
+        run: dotnet build apps/desktop/FlowOS.sln --configuration Release -p:EnableWindowsTargeting=true
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3

@@ -18,8 +18,6 @@ class Branch extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'id',
-        'organization_id',
         'name',
         'address',
         'phone',

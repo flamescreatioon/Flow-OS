@@ -20,14 +20,13 @@ class OrganizationMembership extends Model
 
     public $incrementing = false;
 
-    protected $fillable = [
-        'id',
-        'user_id',
-        'organization_id',
-        'role',
-        'status',
-        'joined_at',
-    ];
+    /**
+     * Membership fields are server-controlled. Application use cases must use
+     * explicit assignment rather than mass assignment from request input.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [];
 
     protected $casts = [
         'joined_at' => 'datetime',

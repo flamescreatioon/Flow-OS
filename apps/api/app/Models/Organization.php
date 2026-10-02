@@ -18,7 +18,6 @@ class Organization extends Tenant
     public $incrementing = false;
 
     protected $fillable = [
-        'id',
         'name',
         'slug',
         'timezone',

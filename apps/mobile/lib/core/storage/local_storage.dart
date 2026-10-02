@@ -48,7 +48,6 @@ class LocalStorage {
   }
 
   // App-specific keys
-  static const String keyAuthToken = 'auth_token';
   static const String keyCurrentOrgId = 'current_org_id';
   static const String keyCurrentBranchId = 'current_branch_id';
   static const String keyUserId = 'user_id';

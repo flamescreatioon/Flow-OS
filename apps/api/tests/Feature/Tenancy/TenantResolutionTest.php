@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Multitenancy\Models\Tenant;
 use Tests\TestCase;
@@ -58,6 +59,53 @@ class TenantResolutionTest extends TestCase
         $this->assertNull(Tenant::current());
     }
 
+    public function test_unauthenticated_request_cannot_enter_a_tenant_route(): void
+    {
+        $organization = Organization::factory()->create();
+
+        $this->withHeaders(['X-Organization-ID' => $organization->id])
+            ->get('/api/v1/test-tenant-context')
+            ->assertUnauthorized();
+
+        $this->assertNull(Tenant::current());
+    }
+
+    public function test_inactive_membership_cannot_establish_tenant_context(): void
+    {
+        $organization = Organization::factory()->create();
+        $user = User::factory()->for($organization)->create();
+        $this->membership($user, $organization, 'suspended');
+        Sanctum::actingAs($user);
+
+        $this->withHeaders(['X-Organization-ID' => $organization->id])
+            ->get('/api/v1/test-tenant-context')
+            ->assertForbidden();
+
+        $this->assertNull(Tenant::current());
+    }
+
+    public function test_tenant_context_is_cleared_when_downstream_code_throws(): void
+    {
+        $organization = Organization::factory()->create();
+        $user = User::factory()->for($organization)->create();
+        $this->membership($user, $organization);
+        Sanctum::actingAs($user);
+
+        $threw = false;
+
+        try {
+            $this->withoutExceptionHandling()
+                ->withHeaders(['X-Organization-ID' => $organization->id])
+                ->get('/api/v1/test-tenant-exception');
+        } catch (\RuntimeException $exception) {
+            $threw = true;
+            $this->assertSame('Test downstream failure.', $exception->getMessage());
+        }
+
+        $this->assertTrue($threw);
+        $this->assertNull(Tenant::current());
+    }
+
     /** @test */
     public function subdomain_alone_cannot_bypass_membership()
     {
@@ -103,6 +151,14 @@ class TenantResolutionTest extends TestCase
         $this->assertNull(Tenant::current());
     }
 
+    public function test_api_group_uses_sanctum_stateful_request_protection(): void
+    {
+        $this->assertContains(
+            EnsureFrontendRequestsAreStateful::class,
+            app('router')->getMiddlewareGroups()['api'],
+        );
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -112,16 +168,24 @@ class TenantResolutionTest extends TestCase
                 'organization_id' => Tenant::current()?->id,
             ]);
         });
+
+        Route::middleware(['auth:sanctum', 'tenant'])->get('/api/v1/test-tenant-exception', function () {
+            throw new \RuntimeException('Test downstream failure.');
+        });
     }
 
     private function membership(User $user, Organization $organization, string $status = 'active'): OrganizationMembership
     {
-        return OrganizationMembership::query()->create([
+        $membership = new OrganizationMembership;
+        $membership->forceFill([
             'user_id' => $user->id,
             'organization_id' => $organization->id,
             'role' => 'viewer',
             'status' => $status,
             'joined_at' => now(),
         ]);
+        $membership->save();
+
+        return $membership;
     }
 }

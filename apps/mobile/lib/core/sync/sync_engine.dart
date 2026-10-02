@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flowos_mobile/core/database/database_helper.dart';
@@ -7,6 +6,18 @@ import 'package:flowos_mobile/core/storage/local_storage.dart';
 import 'package:flutter/foundation.dart';
 
 class SyncEngine {
+  static const Set<String> _supportedEntityTypes = {
+    'organizations',
+    'branches',
+    'users',
+  };
+
+  static const Set<String> _supportedOperations = {
+    'CREATE',
+    'UPDATE',
+    'DELETE',
+  };
+
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final ApiClient _apiClient;
   bool _isSyncing = false;
@@ -86,6 +97,8 @@ class SyncEngine {
     String operation,
     String payload,
   ) async {
+    _assertSupportedOperation(entityType, operation);
+
     String endpoint = '/$entityType';
     if (operation != 'CREATE') {
       endpoint = '/$entityType/$entityId';
@@ -157,6 +170,8 @@ class SyncEngine {
     required String operation,
     required Map<String, dynamic> payload,
   }) async {
+    _assertSupportedOperation(entityType, operation);
+
     final db = await _dbHelper.database;
     await db.insert('sync_queue', {
       'id': Uuid().v4(),
@@ -169,5 +184,12 @@ class SyncEngine {
       'created_at': DateTime.now().toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
     });
+  }
+
+  void _assertSupportedOperation(String entityType, String operation) {
+    if (!_supportedEntityTypes.contains(entityType) ||
+        !_supportedOperations.contains(operation)) {
+      throw ArgumentError('Unsupported sync operation.');
+    }
   }
 }

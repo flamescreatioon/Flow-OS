@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/networking/api_client.dart';
 import '../../core/storage/local_storage.dart';
+import '../../core/storage/secure_token_storage.dart';
 import '../../core/errors/app_error.dart';
-import '../../shared/models/organization.dart';
 
 class AuthService {
   final ApiClient _apiClient;
@@ -29,7 +29,7 @@ class AuthService {
         throw AuthError('Invalid response from server');
       }
 
-      await LocalStorage.setString(LocalStorage.keyAuthToken, token);
+      await SecureTokenStorage.writeAuthToken(token);
       await LocalStorage.setString(
           LocalStorage.keyUserId, user['id'] as String);
       await LocalStorage.setString(
@@ -43,14 +43,14 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    await LocalStorage.remove(LocalStorage.keyAuthToken);
+    await SecureTokenStorage.deleteAuthToken();
     await LocalStorage.remove(LocalStorage.keyUserId);
     await LocalStorage.remove(LocalStorage.keyCurrentOrgId);
     await LocalStorage.remove(LocalStorage.keyCurrentBranchId);
   }
 
-  String? getAuthToken() {
-    return LocalStorage.getString(LocalStorage.keyAuthToken);
+  Future<String?> getAuthToken() {
+    return SecureTokenStorage.readAuthToken();
   }
 
   String? getCurrentOrgId() {
@@ -61,7 +61,7 @@ class AuthService {
     return LocalStorage.getString(LocalStorage.keyCurrentBranchId);
   }
 
-  bool get isAuthenticated => getAuthToken() != null;
+  Future<bool> get isAuthenticated async => (await getAuthToken()) != null;
 }
 
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -104,7 +104,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _checkAuthStatus() async {
-    final token = _authService.getAuthToken();
+    final token = await _authService.getAuthToken();
     state = state.copyWith(isAuthenticated: token != null);
   }
 

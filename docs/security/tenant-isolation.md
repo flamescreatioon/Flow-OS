@@ -2,6 +2,8 @@
 
 ## Core Principles
 
+The current shared-schema architecture uses application-layer tenant isolation; PostgreSQL RLS is not enabled and must not be represented as a current control. RLS may be evaluated later as defense in depth.
+
 ### 1. Tenant Identification ≠ Tenant Authorization
 
 **CRITICAL**: Resolving an organization from a request does NOT grant access.
@@ -128,6 +130,8 @@ class ProcessSale implements ShouldQueue {
     }
 }
 ```
+
+Long-lived workers, Octane, WebSockets, scheduled jobs, and sync processors must explicitly establish tenant context, execute, and clear it in `finally` for every unit of work. Context must never survive a request, job, or connection boundary.
 
 ### 6. Cross-Tenant Operations Require Explicit Paths
 

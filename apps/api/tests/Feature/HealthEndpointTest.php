@@ -28,4 +28,14 @@ class HealthEndpointTest extends TestCase
                 ],
             ]);
     }
+
+    public function test_configured_first_party_origin_can_make_credentialed_api_requests(): void
+    {
+        $this->withHeaders([
+            'Origin' => 'http://localhost:3000',
+        ])->get('/api/v1/health')
+            ->assertOk()
+            ->assertHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
+            ->assertHeader('Access-Control-Allow-Credentials', 'true');
+    }
 }

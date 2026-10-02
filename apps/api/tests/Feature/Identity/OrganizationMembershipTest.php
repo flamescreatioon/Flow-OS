@@ -55,12 +55,16 @@ class OrganizationMembershipTest extends TestCase
         string $role = 'viewer',
         string $status = 'active',
     ): OrganizationMembership {
-        return OrganizationMembership::query()->create([
+        $membership = new OrganizationMembership;
+        $membership->forceFill([
             'user_id' => $user->id,
             'organization_id' => $organization->id,
             'role' => $role,
             'status' => $status,
             'joined_at' => now(),
         ]);
+        $membership->save();
+
+        return $membership;
     }
 }
