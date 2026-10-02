@@ -18,8 +18,10 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
+      // Storage errors can carry browser-specific detail. This utility is only
+      // for non-sensitive preferences, so keep diagnostics non-sensitive too.
+      console.error('Unable to persist local preference.');
     }
   };
 

@@ -26,9 +26,11 @@ class SyncEngine {
 
   bool get isSyncing => _isSyncing;
 
-  void _logError(String message, [Object? error]) {
+  void _logError(String message) {
     if (kDebugMode) {
-      debugPrint('[SyncEngine] $message${error != null ? ': $error' : ''}');
+      // Exception text can include transport or server details. Do not emit it:
+      // debug builds must not leak request credentials or response payloads.
+      debugPrint('[SyncEngine] $message');
     }
   }
 
@@ -41,9 +43,9 @@ class SyncEngine {
       await _pullRemoteChanges();
       await LocalStorage.setString(
           LocalStorage.keyLastSyncAt, DateTime.now().toIso8601String());
-    } catch (e) {
+    } catch (_) {
       // Log error but don't throw - offline-first means we continue operating
-      _logError('Sync failed', e);
+      _logError('Sync failed');
     } finally {
       _isSyncing = false;
     }
@@ -159,8 +161,8 @@ class SyncEngine {
       }
 
       await batch.commit(noResult: true);
-    } catch (e) {
-      _logError('Failed to pull $entityType', e);
+    } catch (_) {
+      _logError('Failed to pull $entityType');
     }
   }
 
