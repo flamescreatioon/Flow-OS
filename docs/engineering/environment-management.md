@@ -25,7 +25,7 @@
 | `DB_PASSWORD` | secret | from vault | from vault | Database password |
 | `REDIS_HOST` | 127.0.0.1 | redis.staging.internal | redis.prod.internal | Redis host |
 | `REDIS_PASSWORD` | null | from vault | from vault | Redis password |
-| `JWT_SECRET` | generated | from vault | from vault | JWT signing secret |
+| `SANCTUM_STATEFUL_DOMAINS` | local web origins | explicit deployed web origins | explicit deployed web origins | Sanctum stateful SPA origins |
 
 ### Frontend Variables
 

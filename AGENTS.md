@@ -571,3 +571,13 @@ Reference: `docs/development/scripts.md`
 - Do not introduce external telemetry, log-shipping, or observability infrastructure without architecture review.
 - Do not silence errors merely to reduce log noise; classify and diagnose them safely.
 - See `docs/observability/README.md`.
+
+---
+
+## 31. Architecture Documentation Authority
+
+- `docs/architecture/README.md` defines high-level system boundaries and current-versus-target architecture.
+- ADRs record the rationale for significant accepted decisions; do not treat historical alternatives as current architecture.
+- OpenAPI is the HTTP contract authority and Laravel migrations are the cloud-schema authority.
+- Security, observability, and offline documentation contain their detailed rules.
+- A prototype is not approved architecture merely because code exists; check its documented status before extending it.
