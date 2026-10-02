@@ -4,7 +4,11 @@
 Use Laravel for API Backend
 
 ## Status
-Accepted
+ACCEPTED
+
+## Current Status Note
+
+The decision to use Laravel remains active. The original `Laravel 11+` version wording is a historical implementation assumption, not a current framework-version mandate. The repository currently uses Laravel 10.50.3; its documented pre-production security debt requires a deliberately tested migration to a supported Laravel 12+ line. See [API architecture](../architecture/api-architecture.md) and [dependency security](../security/dependency-security.md).
 
 ## Context
 Need a PHP backend framework for the API with:

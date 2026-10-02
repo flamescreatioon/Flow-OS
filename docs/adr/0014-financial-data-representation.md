@@ -6,7 +6,7 @@ Use exact, currency-aware financial values.
 
 ## Status
 
-Accepted
+ACCEPTED
 
 ## Context
 

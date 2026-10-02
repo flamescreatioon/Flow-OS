@@ -4,7 +4,7 @@
 Use Flutter for Mobile Application
 
 ## Status
-Accepted
+ACCEPTED
 
 ## Context
 Need a cross-platform mobile framework for iOS and Android with:

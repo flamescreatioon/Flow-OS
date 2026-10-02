@@ -4,7 +4,7 @@
 Use UUIDv7 for Globally Unique Identifiers
 
 ## Status
-Accepted
+ACCEPTED
 
 ## Context
 flowOS requires globally unique IDs for offline-first synchronization:

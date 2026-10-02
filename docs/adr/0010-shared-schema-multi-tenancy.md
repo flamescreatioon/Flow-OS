@@ -4,7 +4,11 @@
 Use Shared Schema Multi-Tenancy for flowOS
 
 ## Status
-Accepted
+SUPERSEDED
+
+## Current Status Note
+
+This duplicate historical shared-schema decision is preserved for traceability. Its JWT/session tenant-resolution and RLS mitigation language are not active architecture. It is superseded by [ADR 0023](0023-shared-schema-tenancy-and-authorization.md).
 
 ## Context
 

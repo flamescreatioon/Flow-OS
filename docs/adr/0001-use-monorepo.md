@@ -4,7 +4,7 @@
 Use Monorepo for flowOS
 
 ## Status
-Accepted
+ACCEPTED
 
 ## Context
 flowOS consists of multiple applications (web, API, mobile, desktop) that share:

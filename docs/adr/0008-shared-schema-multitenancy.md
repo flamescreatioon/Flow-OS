@@ -4,7 +4,11 @@
 Use Shared Schema Multi-Tenancy
 
 ## Status
-Accepted
+SUPERSEDED
+
+## Current Status Note
+
+This original shared-schema decision is preserved as historical context. Its tenant-resolution priority and RLS mitigation language no longer describe the active architecture. It is superseded by [ADR 0023](0023-shared-schema-tenancy-and-authorization.md), which records shared-schema tenancy with explicit membership authorization, Sanctum, and no PostgreSQL RLS.
 
 ## Context
 flowOS is a multi-tenant SaaS serving Nigerian businesses. Need tenant isolation strategy with:

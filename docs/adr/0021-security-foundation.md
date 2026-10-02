@@ -1,7 +1,7 @@
 # ADR 0021: Establish Security Foundation
 
-- **Status:** Accepted
-- **Date:** 2026-10-02
+Status: ACCEPTED
+Date: 2026-10-02
 
 ## Decision
 

@@ -6,7 +6,7 @@ Use UTC instants, IANA organization timezones, and separate calendar semantics.
 
 ## Status
 
-Accepted
+ACCEPTED
 
 ## Context
 

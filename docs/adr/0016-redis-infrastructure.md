@@ -6,7 +6,7 @@ Establish Redis as temporary infrastructure foundation for cache, queue, session
 
 ## Status
 
-Accepted
+ACCEPTED
 
 ## Context
 

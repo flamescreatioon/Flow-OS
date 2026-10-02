@@ -2,7 +2,7 @@
 
 flowOS is an offline-capable, multi-tenant business operating system. It is a modular monolith: one Laravel API deployable with explicit internal boundaries, used by Next.js web, Flutter mobile, and WPF desktop clients.
 
-The source-of-truth hierarchy is: these architecture documents for system boundaries; [ADRs](../adr/) for significant decisions and their rationale; [OpenAPI](../../packages/contracts/openapi/v1.yaml) for HTTP contracts; Laravel migrations for cloud schema; and the detailed [security](../security/README.md), [observability](../observability/README.md), [offline](../offline/README.md), and [API](../api/README.md) documents for specialized rules.
+The source-of-truth hierarchy is: these architecture documents for system boundaries; [ADRs](../adr/README.md) for significant decisions and their rationale; [OpenAPI](../../packages/contracts/openapi/v1.yaml) for HTTP contracts; Laravel migrations for cloud schema; and the detailed [security](../security/README.md), [observability](../observability/README.md), [offline](../offline/README.md), and [API](../api/README.md) documents for specialized rules.
 
 ## Map
 

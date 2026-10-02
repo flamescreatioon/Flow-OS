@@ -6,7 +6,7 @@ Establish local Docker development environment for core infrastructure services 
 
 ## Status
 
-Accepted
+ACCEPTED
 
 ## Context
 

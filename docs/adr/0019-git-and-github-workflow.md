@@ -2,7 +2,11 @@
 
 ## Status
 
-Accepted
+ACCEPTED
+
+## Current Status Note
+
+`main` is the integration branch intended for production-ready changes after hosting and branch protection are configured. This does not claim that the current application is production-ready; framework security migrations and other documented Sprint 0 debt remain blockers.
 
 ## Decision
 

@@ -6,7 +6,7 @@ Adopt REST API standards for flowOS.
 
 ## Status
 
-Accepted
+ACCEPTED
 
 ## Context
 

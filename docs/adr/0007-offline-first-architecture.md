@@ -4,7 +4,11 @@
 Adopt Offline-First Architecture
 
 ## Status
-Accepted
+SUPERSEDED
+
+## Current Status Note
+
+This original offline-first direction is preserved as historical context. Its generic conflict and sync details are superseded by [ADR 0012](0012-offline-first-synchronization.md), which defines UUIDv7 operation IDs, opaque cursors, tombstones, and domain-specific conflict handling.
 
 ## Context
 flowOS targets Nigerian businesses where:

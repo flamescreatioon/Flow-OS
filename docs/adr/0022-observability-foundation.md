@@ -1,7 +1,7 @@
 # ADR 0022: Establish Observability Foundation
 
-- **Status:** Accepted
-- **Date:** 2026-10-02
+Status: ACCEPTED
+Date: 2026-10-02
 
 ## Decision
 

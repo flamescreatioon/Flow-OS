@@ -6,7 +6,7 @@ Adopt membership-based identity and access.
 
 ## Status
 
-Accepted
+ACCEPTED
 
 ## Context
 

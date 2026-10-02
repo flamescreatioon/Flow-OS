@@ -4,7 +4,7 @@
 Use PostgreSQL as Primary Database
 
 ## Status
-Accepted
+ACCEPTED
 
 ## Context
 Need a relational database for the SaaS application with:

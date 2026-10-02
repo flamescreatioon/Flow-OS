@@ -2,7 +2,11 @@
 
 ## Status
 
-Accepted
+ACCEPTED
+
+## Current Status Note
+
+The workflow is configured locally. No Git remote is configured, so hosted GitHub Actions execution and branch-protection enforcement are unavailable. The accepted Flutter analyzer baseline is currently 186 findings; hosted CI keeps it advisory while local `dev verify` remains non-zero.
 
 ## Decision
 

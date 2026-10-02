@@ -6,7 +6,7 @@ Adopt local-first synchronization for supported mobile and desktop workflows.
 
 ## Status
 
-Accepted
+ACCEPTED
 
 ## Context
 

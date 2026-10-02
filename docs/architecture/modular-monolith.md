@@ -12,4 +12,4 @@ Application
 Domain
 ```
 
-The current Laravel scaffold contains these layers but is not yet a complete domain implementation. Domain logic should avoid framework/infrastructure dependencies where practical.
+The current Laravel scaffold contains these layers but is not yet a complete domain implementation. Domain logic should avoid framework/infrastructure dependencies where practical. See [ADR 0024](../adr/0024-modular-monolith-architecture.md).

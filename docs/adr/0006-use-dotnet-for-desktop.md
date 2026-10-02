@@ -4,7 +4,7 @@
 Use .NET/C# for Desktop Application
 
 ## Status
-Accepted
+ACCEPTED
 
 ## Context
 Need a Windows desktop framework for POS/offline use with:

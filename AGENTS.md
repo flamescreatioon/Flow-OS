@@ -581,3 +581,4 @@ Reference: `docs/development/scripts.md`
 - OpenAPI is the HTTP contract authority and Laravel migrations are the cloud-schema authority.
 - Security, observability, and offline documentation contain their detailed rules.
 - A prototype is not approved architecture merely because code exists; check its documented status before extending it.
+- Do not rewrite an accepted ADR to silently change architecture: create a new ADR and mark the historical decision superseded when needed.

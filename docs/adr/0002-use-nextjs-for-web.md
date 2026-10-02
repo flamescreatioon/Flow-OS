@@ -4,7 +4,11 @@
 Use Next.js for Web Application
 
 ## Status
-Accepted
+ACCEPTED
+
+## Current Status Note
+
+The decision to use Next.js remains active. The original `Next.js 14+` wording is historical and does not waive the documented framework security requirement: the repository's Next.js 14 line must migrate to a patched 15.5.24+ line before production. See [web architecture](../architecture/web-architecture.md) and [dependency security](../security/dependency-security.md).
 
 ## Context
 Need a React framework for the web application with:
