@@ -42,6 +42,7 @@ N/A
 - [ ] Relevant test suites run and passing locally
 - [ ] Code formatting and linter checks pass without new warnings or broad suppressions
 - [ ] No secrets, credentials, or private configuration committed (`.env` excluded)
+- [ ] New logs do not contain secrets, credentials, or unnecessary PII
 - [ ] Database migrations are reversible (`down()` implemented and tested where practical)
 - [ ] Multi-tenancy isolation respected (`organization_id` scoped where appropriate)
 - [ ] Authentication and role-based permissions verified

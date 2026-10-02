@@ -7,6 +7,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Psr\Log\LogLevel;
 use Throwable;
@@ -52,27 +53,56 @@ class Handler extends ExceptionHandler
         });
     }
 
+    public function report(Throwable $e): void
+    {
+        $request = request();
+
+        if ($request instanceof Request && $requestId = $request->attributes->get('request_id')) {
+            Log::withContext(['request_id' => $requestId]);
+        }
+
+        try {
+            parent::report($e);
+        } finally {
+            Log::withoutContext();
+        }
+    }
+
     public function render($request, Throwable $e)
     {
         if ($request instanceof Request && $request->is('api/*')) {
             if ($e instanceof ValidationException) {
-                return response()->json(['error' => ['code' => 'VALIDATION_ERROR', 'message' => 'The given data was invalid.', 'details' => ['fields' => $e->errors()]]], 422);
+                return $this->apiError($request, ['error' => ['code' => 'VALIDATION_ERROR', 'message' => 'The given data was invalid.', 'details' => ['fields' => $e->errors()]]], 422);
             }
             if ($e instanceof AuthenticationException) {
-                return response()->json(['error' => ['code' => 'UNAUTHENTICATED', 'message' => 'Unauthenticated.']], 401);
+                return $this->apiError($request, ['error' => ['code' => 'UNAUTHENTICATED', 'message' => 'Unauthenticated.']], 401);
             }
             if ($e instanceof AuthorizationException) {
-                return response()->json(['error' => ['code' => 'FORBIDDEN', 'message' => 'This action is unauthorized.']], 403);
+                return $this->apiError($request, ['error' => ['code' => 'FORBIDDEN', 'message' => 'This action is unauthorized.']], 403);
             }
             if ($e instanceof ModelNotFoundException) {
-                return response()->json(['error' => ['code' => 'RESOURCE_NOT_FOUND', 'message' => 'Resource not found.']], 404);
+                return $this->apiError($request, ['error' => ['code' => 'RESOURCE_NOT_FOUND', 'message' => 'Resource not found.']], 404);
             }
 
             if (! config('app.debug')) {
-                return response()->json(['error' => ['code' => 'INTERNAL_ERROR', 'message' => 'An unexpected error occurred.']], 500);
+                return $this->apiError($request, ['error' => ['code' => 'INTERNAL_ERROR', 'message' => 'An unexpected error occurred.']], 500);
             }
         }
 
         return parent::render($request, $e);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function apiError(Request $request, array $payload, int $status)
+    {
+        $response = response()->json($payload, $status);
+
+        if ($requestId = $request->attributes->get('request_id')) {
+            $response->headers->set('X-Request-ID', $requestId);
+        }
+
+        return $response;
     }
 }

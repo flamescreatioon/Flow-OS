@@ -559,3 +559,15 @@ Scripts must be non-destructive by default:
 Verification scripts must return correct exit codes for CI compatibility.
 
 Reference: `docs/development/scripts.md`
+
+---
+
+## 30. Observability Rules
+
+- Never log secrets, auth headers, cookies, tokens, passwords, or full request/response bodies by default.
+- Prefer structured logs with stable lowercase dot-separated event names and safe contextual IDs.
+- Use request/correlation IDs; log tenant IDs only from validated tenant context.
+- Logs are not business or audit truth. Durable audit events require their own append-oriented design.
+- Do not introduce external telemetry, log-shipping, or observability infrastructure without architecture review.
+- Do not silence errors merely to reduce log noise; classify and diagnose them safely.
+- See `docs/observability/README.md`.
