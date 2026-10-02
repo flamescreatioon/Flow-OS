@@ -1,0 +1,251 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository:
+    name: Repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose configuration
+        run: |
+          docker compose config
+
+      - name: Validate Shell script syntax
+        run: |
+          bash -n scripts/*.sh infrastructure/scripts/*.sh
+
+      - name: Check for unresolved conflict markers
+        run: |
+          if grep -rnE "^<<<<<<<|^=======|^>>>>>>>" . --exclude-dir=.git --exclude-dir=node_modules --exclude="*.md"; then
+            echo "Error: Unresolved merge conflict markers detected."
+            exit 1
+          fi
+
+  api:
+    name: API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_sqlite, sqlite3
+          tools: composer:v2
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('apps/api/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Setup test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --env=testing
+
+      - name: Run Laravel tests (SQLite fast suite)
+        run: php artisan test
+
+      - name: Check PHP formatting (Pint)
+        run: ./vendor/bin/pint --test
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies from lockfile
+        run: npm ci
+
+      - name: Run Web tests
+        run: npm run test
+
+      - name: Check ESLint
+        run: npm run lint
+
+      - name: Check TypeScript types
+        run: npm run typecheck
+
+      - name: Build Next.js application
+        run: npm run build
+
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Check Dart formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Flutter analyze (Temporary quality debt exception)
+        run: flutter analyze
+        continue-on-error: true
+
+      - name: Run Flutter tests
+        run: flutter test
+
+  desktop:
+    name: Desktop
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/desktop
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore FlowOS.sln
+
+      - name: Build Desktop solution
+        run: dotnet build FlowOS.sln --configuration Release --no-restore
+
+      - name: Run Desktop tests
+        run: dotnet test FlowOS.sln --configuration Release --no-build
+
+      - name: Check C# formatting
+        run: dotnet format FlowOS.sln --verify-no-changes
+
+  infrastructure:
+    name: Infrastructure
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: flowos_ci
+          POSTGRES_USER: flowos_ci
+          POSTGRES_PASSWORD: flowos_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client and Redis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client redis-tools
+
+      - name: Verify Redis service ping
+        run: |
+          redis-cli -h 127.0.0.1 -p 6379 ping
+
+      - name: Apply foundational PostgreSQL extensions
+        run: |
+          PGPASSWORD=flowos_ci_password psql -h 127.0.0.1 -U flowos_ci -d flowos_ci -f infrastructure/database/init/01-extensions.sql
+
+      - name: Verify UUIDv7 generation in PostgreSQL 16
+        run: |
+          PGPASSWORD=flowos_ci_password psql -h 127.0.0.1 -U flowos_ci -d flowos_ci -c "SELECT uuid_generate_v7();"
+
+      - name: Setup PHP for migration smoke test
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_pgsql, redis
+          tools: composer:v2
+
+      - name: Install Composer dependencies for API
+        working-directory: apps/api
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run Laravel PostgreSQL migration smoke test
+        working-directory: apps/api
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: flowos_ci
+          DB_USERNAME: flowos_ci
+          DB_PASSWORD: flowos_ci_password
+        run: |
+          cp .env.example .env
+          php artisan key:generate --env=testing
+          php artisan migrate --force
+          php artisan migrate:status

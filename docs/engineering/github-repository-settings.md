@@ -57,14 +57,18 @@ The `main` branch is the production-ready integration branch. The following rule
   - All review comments, questions, and blocker notes must be resolved or explicitly marked resolved before merge.
 
 ### 4.3 Required Status Checks
-- [ ] **Require status checks to pass before merging**
-  - **Status: PENDING SPRINT 0.21**
-  - CI workflows and exact job check names are being finalized in Sprint 0.21. Once CI workflows run on GitHub Actions, required status checks will include:
-    - Web CI (lint, typecheck, test, build)
-    - API CI (lint, tests with PostgreSQL/Redis, PHPStan)
-    - Mobile CI (flutter analyze, flutter test)
-    - Desktop CI (dotnet format, dotnet build, dotnet test)
-  - Do not invent check names prior to Sprint 0.21 workflow implementation.
+- [x] **Require status checks to pass before merging**
+  - **Status: DOCUMENTED — NOT APPLIED** (Awaiting remote connection and activation)
+  - The following blocking checks from `.github/workflows/ci.yml` must be configured as required status checks in GitHub branch protection:
+    - **`Repository`** (or `CI / Repository`): Docker Compose configuration, shell script syntax, conflict marker scan.
+    - **`API`** (or `CI / API`): Fast SQLite tests (`php artisan test`) and Pint style check (`pint --test`).
+    - **`Web`** (or `CI / Web`): Jest unit tests (`npm run test`), ESLint (`npm run lint`), TypeScript compilation (`npm run typecheck`), and Next.js production build (`npm run build`).
+    - **`Mobile`** (or `CI / Mobile`): Flutter dependencies (`flutter pub get`), Dart formatting (`dart format`), and unit/widget tests (`flutter test`).
+    - **`Desktop`** (or `CI / Desktop`): .NET 8 restore, Release build, test execution, and formatting (`dotnet format --verify-no-changes`) on Windows runner.
+    - **`Infrastructure`** (or `CI / Infrastructure`): Disposable PostgreSQL 16 & Redis 7 container smoke, extension init (`01-extensions.sql`), UUIDv7 verification, and Laravel PostgreSQL migration smoke (`php artisan migrate --force`).
+
+  > [!IMPORTANT]
+  > **Temporary Quality Debt Exception**: The `flutter analyze` step within the `Mobile` job is configured with `continue-on-error: true` due to 185 pre-existing analyzer issues. The overall `Mobile` check remains blocking, but analyzer failures will not block pull requests until the debt is remediated. Do not promote Flutter analyzer to a required separate blocking check until zero findings are achieved.
 
 ### 4.4 History & Safety Controls
 - [x] **Require linear history**

@@ -327,6 +327,14 @@ Agents may flag related work but must not perform it unless required.
 
 Agents should only run commands applicable to the current task.
 
+### Continuous Integration (CI) Guidance
+- CI configuration lives under `.github/workflows/ci.yml`.
+- **Do not weaken or skip blocking checks** to merge code or make pipelines pass.
+- **Local relevant verification is mandatory** before creating handoffs or claiming completion.
+- **Flutter analyzer debt**: `flutter analyze` is temporarily advisory (`continue-on-error: true`) in hosted CI only. Local `dev verify` remains strictly non-zero (`exit 1`) to preserve debt visibility.
+- **Workflow & check name stability**: Renaming workflow files or job names directly impacts GitHub branch protection rules and requires deliberate review.
+- Reference: `docs/engineering/ci.md`
+
 ---
 
 ## 18. Multi-Agent Collaboration
