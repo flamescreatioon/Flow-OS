@@ -1,0 +1,68 @@
+name: Desktop CI
+
+on:
+  push:
+    paths:
+      - 'apps/desktop/**'
+      - '.github/workflows/desktop-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/desktop/**'
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          cache: true
+
+      - name: Restore
+        run: dotnet restore FlowOS.sln
+
+      - name: Build
+        run: dotnet build FlowOS.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test FlowOS.sln --configuration Release --no-build --collect:"XPlat Code Coverage"
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: '**/coverage.cobertura.xml'
+          flags: desktop
+
+  build-self-contained:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/desktop
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          cache: true
+
+      - name: Restore
+        run: dotnet restore FlowOS.sln
+
+      - name: Publish self-contained
+        run: dotnet publish src/FlowOS.Desktop/FlowOS.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: flowos-desktop-win-x64
+          path: publish/
+          retention-days: 7

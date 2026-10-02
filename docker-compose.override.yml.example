@@ -1,0 +1,15 @@
+# Example docker-compose.override.yml
+# Copy to docker-compose.override.yml for local machine customizations.
+# docker-compose.override.yml is git-ignored and automatically merged by Docker Compose.
+
+services:
+  # Example: Expose PostgreSQL on a non-standard port or add local environment variables
+  # postgres:
+  #   ports:
+  #     - "127.0.0.1:5433:5432"
+  #   environment:
+  #     POSTGRES_PASSWORD: my_custom_dev_password
+
+  # Example: Add custom Redis configuration or extra volume mounts
+  # redis:
+  #   command: ["redis-server", "--maxmemory", "256mb"]

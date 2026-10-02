@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: flowOS Architecture & Engineering Documentation
+    url: https://github.com/flamescreatioon/flowos
+    about: Please inspect the repository docs/ directory for architectural standards, multi-tenancy rules, and financial guidelines before opening new tasks.

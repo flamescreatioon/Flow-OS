@@ -1,0 +1,125 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Android related
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/build/
+**/android/**/generated/
+**/android/**/ndk-build/
+
+# iOS related
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.~*.swp
+**/ios/**/.~*.swp
+**/ios/**/.xcuserdatad
+**/ios/**/*.xcuserstate
+**/ios/**/*.xccheckout
+**/ios/**/DerivedData/
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/Podfile
+**/ios/**/Podfile.lock
+**/ios/**/export_options.plist
+**/ios/**/ExportOptions.plist
+
+# macOS related
+**/macos/**/*.mode1v3
+**/macos/**/*.mode2v3
+**/macos/**/*.moved-aside
+**/macos/**/*.pbxuser
+**/macos/**/*.perspectivev3
+**/macos/**/*sync/
+**/macos/**/.sconsign.dblite
+**/macos/**/.~*.swp
+**/macos/**/.~*.swp
+**/macos/**/.xcuserdatad
+**/macos/**/*.xcuserstate
+**/macos/**/*.xccheckout
+**/macos/**/DerivedData/
+**/macos/**/Pods/
+**/macos/**/.symlinks/
+
+# Windows related
+**/windows/**/*.suo
+**/windows/**/*.user
+**/windows/**/*.userosscache
+**/windows/**/*.sln.docstates
+**/windows/**/build/
+
+# Linux related
+**/linux/**/*.suo
+**/linux/**/*.user
+**/linux/**/*.userosscache
+**/linux/**/*.sln.docstates
+**/linux/**/build/
+
+# Web related
+**/web/**/build/
+
+# Coverage directories
+coverage/
+.dart_tool/coverage/
+
+# Symbolication related
+app.*.symbols.dart
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio related
+**/android/**/.idea/
+**/android/**/.gradle/
+
+# Xcode related
+**/ios/**/*.xcodeproj/xcuserdata/
+**/ios/**/*.xcworkspace/xcuserdata/
+**/macos/**/*.xcodeproj/xcuserdata/
+**/macos/**/*.xcworkspace/xcuserdata/
+
+# Visual Studio related
+**/windows/**/*.suo
+**/windows/**/*.user
+**/windows/**/*.userosscache
+**/windows/**/*.sln.docstates

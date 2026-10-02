@@ -1,0 +1,75 @@
+name: Technical Task
+description: Internal engineering task, refactoring, infrastructure, or agentic task
+title: "chore: "
+labels: ["type:tech-task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for internal architectural tasks, refactors, sprint milestones, and agent pair-programming assignments.
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: Concise statement of what technical outcome is to be achieved.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Clear boundaries of what is included and explicitly excluded.
+      placeholder: |
+        Included:
+        - ...
+        Excluded:
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Checklist of mandatory conditions for task completion.
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+    validations:
+      required: true
+  - type: dropdown
+    id: affected_components
+    attributes:
+      label: Affected Components
+      description: Select affected modules and applications.
+      multiple: true
+      options:
+        - apps/api (Laravel)
+        - apps/web (Next.js)
+        - apps/mobile (Flutter)
+        - apps/desktop (.NET)
+        - packages/contracts (OpenAPI)
+        - packages/types
+        - infrastructure (Docker / Postgres / Redis)
+        - docs / architecture
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / Blockers
+      description: List prerequisite issues, ADRs, or external requirements.
+      placeholder: "None or depends on #..."
+    validations:
+      required: false
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification Plan
+      description: Specific test commands and checks required to confirm correctness.
+      placeholder: |
+        - `php artisan test`
+        - `npm run test`
+        - `flutter test`
+        - `dotnet test`
+    validations:
+      required: true

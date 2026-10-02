@@ -1,0 +1,65 @@
+name: Feature Request
+description: Propose an idea or functional improvement for flowOS
+title: "feat: "
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest a new feature or improvement for flowOS.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What challenge or user friction does this solve?
+      placeholder: "When managing daily sales in low connectivity areas, merchants face..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_outcome
+    attributes:
+      label: Proposed Outcome
+      description: What should flowOS do to address this?
+      placeholder: "Allow the cashier to complete the sale offline and sync once connected..."
+    validations:
+      required: true
+  - type: textarea
+    id: users_affected
+    attributes:
+      label: Users Affected
+      description: Who will benefit from this feature? (e.g. Cashiers, Store Managers, Accountants, Multi-branch Owners)
+    validations:
+      required: true
+  - type: textarea
+    id: business_value
+    attributes:
+      label: Business Value
+      description: Why is this important to Nigerian businesses or flowOS operational efficiency?
+    validations:
+      required: false
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: Platforms Affected
+      description: Select all client platforms or layers where this applies.
+      multiple: true
+      options:
+        - Web (Next.js)
+        - API (Laravel)
+        - Mobile (Flutter)
+        - Desktop (.NET)
+        - All Platforms
+    validations:
+      required: true
+  - type: dropdown
+    id: offline_considerations
+    attributes:
+      label: Offline Considerations
+      description: How should this feature behave when offline?
+      options:
+        - Full offline operation with optimistic local write & sync
+        - Read-only cache when offline
+        - Online-only required (e.g. real-time external bank payment gateway)
+        - Not applicable / UI-only
+    validations:
+      required: true
