@@ -1,5 +1,7 @@
 # flowOS Documentation Directory
 
+The [domain map](domain/README.md) defines initial business-domain ownership, tenant/branch scoping, and future module invariants.
+
 This directory contains the canonical documentation for **flowOS**, an offline-capable, multi-tenant business operating system designed for Nigerian businesses.
 
 ---

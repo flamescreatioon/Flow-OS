@@ -582,3 +582,11 @@ Reference: `docs/development/scripts.md`
 - Security, observability, and offline documentation contain their detailed rules.
 - A prototype is not approved architecture merely because code exists; check its documented status before extending it.
 - Do not rewrite an accepted ADR to silently change architecture: create a new ADR and mark the historical decision superseded when needed.
+
+---
+
+## 32. Domain Ownership
+
+- Use `docs/domain/README.md` to determine the owning domain and invariants before adding a business entity or workflow.
+- Do not bypass domain invariants with generic model CRUD; sync transports validated domain operations.
+- Inventory changes are movement-based and finalized commercial/financial records use correction semantics, not casual deletion.

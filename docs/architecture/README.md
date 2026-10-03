@@ -11,6 +11,7 @@ The source-of-truth hierarchy is: these architecture documents for system bounda
 - [Mobile](mobile-architecture.md), [desktop](desktop-architecture.md), and [data](data-architecture.md)
 - [Tenancy](tenancy-architecture.md), [identity and access](identity-access-architecture.md), and [offline sync](offline-sync-architecture.md)
 - [Security](security-architecture.md), [observability](observability-architecture.md), [deployment](deployment-architecture.md), [integrations](integration-architecture.md), and [boundaries](architecture-boundaries.md)
+- [Initial domain map](../domain/README.md)
 - [Current architecture audit](current-architecture-audit.md)
 
 `IMPLEMENTED` describes code present now; `ARCHITECTED` describes accepted direction; `PLANNED` is not implementation. Sprint 1 may build identity, organizations, branches, memberships, roles, tenant-safe APIs, and device/audit foundations using these boundaries.
