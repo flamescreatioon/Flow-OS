@@ -22,32 +22,39 @@ Laravel must migrate to a supported Laravel 12+ line and Next.js must migrate to
 ## Quick start
 
 ```powershell
+# Automated setup (dependencies & environment)
+.\scripts\dev.ps1 setup
+
+# Start backing infrastructure & run tests
 .\scripts\dev.ps1 up
 .\scripts\dev.ps1 test
 ```
 
-Applications normally run natively during development. Docker Compose supplies PostgreSQL, Redis, and optional Mailpit. See [local setup](docs/development/local-setup.md) and [development scripts](docs/development/scripts.md).
+Applications normally run natively during development. Docker Compose supplies PostgreSQL, Redis, and optional Mailpit. See [development onboarding](docs/development/README.md) and [development scripts](docs/development/scripts.md).
 
 ## Repository structure
 
 ```text
-apps/          Web, API, mobile, and desktop applications
-packages/      OpenAPI contracts and shared packages
+apps/           Web, API, mobile, and desktop applications
+packages/       OpenAPI contracts and shared packages
 infrastructure/ Local infrastructure configuration
-docs/          Architecture, security, observability, engineering, and product documentation
-scripts/       Repository development commands
+docs/           Architecture, development, engineering, security, and product documentation
+scripts/        Repository development commands
 ```
 
 ## Documentation
 
+- [Developer onboarding & local setup](docs/development/README.md)
 - [Architecture](docs/architecture/README.md)
 - [Security](docs/security/README.md)
 - [Observability](docs/observability/README.md)
 - [Offline architecture](docs/offline/README.md)
 - [API documentation](docs/api/README.md)
-- [Engineering documentation](docs/engineering/code-quality.md)
+- [Engineering policy & CI](docs/engineering/code-quality.md)
+- [Testing strategy](docs/testing/README.md)
 - [ADRs](docs/adr/)
+- [Documentation index](docs/README.md)
 
 ## Contributing
 
-Read [AGENTS.md](AGENTS.md), [contribution guidelines](CONTRIBUTING.md), and [code quality guidance](docs/engineering/code-quality.md) before changing the repository.
+Read [contribution guidelines](CONTRIBUTING.md), [developer onboarding](docs/development/README.md), and [AGENTS.md](AGENTS.md) before contributing to the repository.

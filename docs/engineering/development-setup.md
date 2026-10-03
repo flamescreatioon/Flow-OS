@@ -1,5 +1,8 @@
 # Development Setup
 
+> [!IMPORTANT]
+> **Canonical Documentation Notice**: The canonical developer setup and workstation workflow documentation has moved to [docs/development/README.md](../development/README.md) and [docs/development/local-setup.md](../development/local-setup.md). Please refer to those guides for the latest authoritative instructions.
+
 ## Prerequisites
 
 | Tool | Version | Install |

@@ -1,159 +1,84 @@
-# Development Scripts
+# Development Scripts Reference
 
-flowOS provides cross-platform development scripts for common operations.
+flowOS provides cross-platform development automation scripts to manage daily workflows, backing infrastructure, testing, code quality checks, and database operations.
 
-## Script Families
+---
 
-| Platform | Primary Script |
-|----------|----------------|
-| Windows / PowerShell | `.\scripts\dev.ps1` |
-| Linux / macOS / WSL | `./scripts/dev.sh` |
+## 1. Script Invocations
 
-Both scripts provide equivalent commands and behavior.
+| Platform | Script Path | Invocation Syntax |
+|----------|-------------|-------------------|
+| **Windows (PowerShell)** | `scripts/dev.ps1` | `.\scripts\dev.ps1 <command> [args]` |
+| **Linux / macOS / WSL (Bash)** | `scripts/dev.sh` | `./scripts/dev.sh <command> [args]` |
 
-## Command Reference
+Both scripts implement identical command names, arguments, safety validations, and exit codes.
 
-### Setup
-```bash
-# Bash
-./scripts/setup.sh
+---
 
-# PowerShell
-.\scripts\setup.ps1
-```
-Prepares a new developer environment:
-- Checks prerequisites (git, docker, node, php, composer, flutter, dotnet)
-- Copies missing `.env` files from examples (never overwrites existing)
-- Installs dependencies (composer, npm, flutter pub get, dotnet restore)
-- Generates Laravel application key **only if missing or empty**
+## 2. Command Reference Table
 
-Does NOT:
-- Overwrite existing `.env` files
-- Start infrastructure
-- Run migrations
-- Start application servers
-- Regenerate existing valid APP_KEY
+| Command | Category | Description | Primary Underlying Tools |
+|---------|----------|-------------|--------------------------|
+| `setup` | Environment | Prepares development workstation (copies env files, installs deps, generates key) | `npm install`, `composer install`, `flutter pub get`, `dotnet restore` |
+| `up` | Infrastructure | Starts PostgreSQL 16, Redis 7, and Mailpit in background | `docker compose up -d` |
+| `down` | Infrastructure | Stops infrastructure containers while **preserving persistent volumes** | `docker compose down` |
+| `status` | Infrastructure | Displays container status, health, and local access URLs | `docker compose ps` |
+| `logs [service]` | Infrastructure | Follows container logs (for all services or a specified service) | `docker compose logs -f [service]` |
+| `test` | Quality | Executes all functional test suites across API, Web, Mobile, and Desktop | `php artisan test`, `npm run test`, `flutter test`, `dotnet test` |
+| `lint` | Quality | Executes static analysis and linters across API, Web, and Mobile | `pint --test`, `npm run lint`, `flutter analyze` |
+| `format` | Quality | Automatically formats code in-place across API, Mobile, and Desktop | `pint`, `dart format`, `dotnet format` |
+| `format-check` | Quality | Verifies code formatting without modifying files (fails if unformatted) | `pint --test`, `dart format --output=none`, `dotnet format --verify-no-changes` |
+| `verify` | Quality | Full repository-wide quality verification suite | Compose config, API tests+lint, Web tests+lint+typecheck, Mobile tests+analyze, Desktop build+test+format |
+| `db-migrate` | Database | Runs pending Laravel schema migrations | `php artisan migrate` |
+| `db-status` | Database | Displays migration execution status | `php artisan migrate:status` |
+| `db-reset` | Database | **Destructive**: resets local development database schema (requires confirmation) | `php artisan migrate:fresh --force` |
+| `help` | Information | Displays usage instructions and supported command summary | None |
 
-### Infrastructure
+---
 
-| Command | Description |
-|---------|-------------|
-| `dev up` | Start PostgreSQL, Redis, Mailpit (`docker compose up -d`) |
-| `dev down` | Stop infrastructure, preserve volumes (`docker compose down`) |
-| `dev status` | Show container status and local URLs |
-| `dev logs [service]` | Follow logs (all or specific service) |
+## 3. Command Details & Semantics
 
-### Tests
-```bash
-dev test
-```
-Runs available test suites:
-- API: `php artisan test`
-- Web: `npm run test` (if configured)
-- Mobile: `flutter test`
-- Desktop: `dotnet test`
+### `setup`
+Initializes a new or refreshed developer workspace:
+- Scans workstation for prerequisites (`git`, `docker`, `node`, `php`, `composer`, `flutter`, `dotnet`).
+- Copies missing `.env` files from templates (`apps/web/.env.local`, `apps/api/.env`).
+- Installs application dependencies (`npm install`, `composer install`, `flutter pub get`, `dotnet restore FlowOS.sln`).
+- Generates Laravel application encryption key (`php artisan key:generate`) only if missing.
+- **Safety**: Never overwrites existing `.env` files; does not start containers or run migrations.
 
-Skips components where tooling is unavailable.
+### `test`
+Executes functional test suites across all applications where tooling is present:
+- **API**: `php artisan test` (SQLite `:memory:`)
+- **Web**: `npm run test` (Jest)
+- **Mobile**: `flutter test`
+- **Desktop**: `dotnet test FlowOS.sln`
+- **Exit Code**: Returns `0` if all present suites pass. Does not fail for Flutter analyzer warnings.
 
-### Lint
-```bash
-dev lint
-```
-Runs linters:
-- API: `./vendor/bin/pint --test`
-- Web: `npm run lint`
-- Mobile: `flutter analyze` (reports pre-existing issues)
+### `verify`
+Runs the complete repository-wide quality verification pipeline:
+1. Docker Compose configuration validation (`docker compose config`).
+2. API test suite and Pint code style verification.
+3. Web test suite, ESLint, and TypeScript typechecking (`tsc --noEmit`).
+4. Mobile test suite and Flutter static analyzer (`flutter analyze`).
+5. Desktop build, test execution, and .NET format verification (`dotnet format --verify-no-changes`).
 
-### Formatting
+> [!WARNING]
+> **Expected Exit Code**: `dev verify` currently exits with code **`1`** due to **accepted Flutter analyzer debt (186 findings)**.
+> 
+> As defined in `AGENTS.md` Rule 17, local `dev verify` intentionally returns non-zero to maintain visibility into pre-existing technical debt. In hosted CI, `flutter analyze` is temporarily advisory (`continue-on-error: true`). Do not weaken analyzer settings to force exit code 0.
 
-| Command | Description |
-|---------|-------------|
-| `dev format` | Format code (API, Flutter, Desktop) |
-| `dev format-check` | Check formatting without changes |
+### `db-reset`
+Safely resets the local development PostgreSQL schema:
+- **Guardrail 1**: Rejects execution if `APP_ENV=production` in `apps/api/.env`.
+- **Guardrail 2**: Rejects execution if `DB_HOST` is not `127.0.0.1` or `localhost`.
+- **Guardrail 3**: Demands explicit user confirmation (`Type RESET to continue`).
+- Drops all application tables and re-runs all migrations (`php artisan migrate:fresh --force`).
 
-### Verification
-```bash
-dev verify
-```
-Runs repository-wide quality snapshot:
-1. Docker Compose config validation
-2. API tests + Pint (requires php)
-3. Web tests + lint + typecheck (requires npm)
-4. Mobile tests + analyze (requires flutter)
-5. Desktop build + tests + format check (requires dotnet)
+---
 
-Reports per-component results. Known Flutter analyzer debt will cause verify to fail — this is documented pre-existing debt.
+## 4. Safety Guarantees
 
-**Verification fails if required tools are missing** — missing php, npm, flutter, or dotnet will cause verify to fail with a clear error message.
-
-### Database
-
-| Command | Description |
-|---------|-------------|
-| `dev db-migrate` | Run Laravel migrations (`php artisan migrate`) |
-| `dev db-status` | Show migration status (`php artisan migrate:status`) |
-| `dev db-reset` | **Destructive**: reset local schema (`php artisan migrate:fresh`) |
-
-#### db-reset Safety
-The `db-reset` command includes multiple safety protections:
-1. Refuses if `APP_ENV=production`
-2. Refuses if `DB_HOST` is not `127.0.0.1` or `localhost`
-3. Requires explicit confirmation: type `RESET`
-4. Uses `php artisan migrate:fresh --force`
-
-### Help
-```bash
-dev help
-```
-Shows usage and available commands.
-
-## Safety Principles
-
-- **Never overwrite `.env` files** — setup scripts only copy when missing
-- **Infrastructure `down` preserves volumes** — `docker compose down` (not `down -v`)
-- **Destructive operations require explicit confirmation** — `db-reset` requires typing `RESET`
-- **Production protection** — `db-reset` refuses if `APP_ENV=production` or non-local `DB_HOST`
-- **Setup is idempotent** — preserves existing environment files and APP_KEY
-- **Exit codes** — scripts return non-zero on failure for CI compatibility
-
-## Cross-Platform Equivalence
-
-| Bash | PowerShell | Description |
-|------|------------|-------------|
-| `./scripts/dev.sh setup` | `.\scripts\dev.ps1 setup` | Setup environment |
-| `./scripts/dev.sh up` | `.\scripts\dev.ps1 up` | Start infrastructure |
-| `./scripts/dev.sh down` | `.\scripts\dev.ps1 down` | Stop infrastructure |
-| `./scripts/dev.sh status` | `.\scripts\dev.ps1 status` | Show status |
-| `./scripts/dev.sh logs` | `.\scripts\dev.ps1 logs` | Follow logs |
-| `./scripts/dev.sh test` | `.\scripts\dev.ps1 test` | Run tests |
-| `./scripts/dev.sh lint` | `.\scripts\dev.ps1 lint` | Run linters |
-| `./scripts/dev.sh format` | `.\scripts\dev.ps1 format` | Format code |
-| `./scripts/dev.sh format-check` | `.\scripts\dev.ps1 format-check` | Check formatting |
-| `./scripts/dev.sh verify` | `.\scripts\dev.ps1 verify` | Full verification |
-| `./scripts/dev.sh db-migrate` | `.\scripts\dev.ps1 db-migrate` | Run migrations |
-| `./scripts/dev.sh db-status` | `.\scripts\dev.ps1 db-status` | Migration status |
-| `./scripts/dev.sh db-reset` | `.\scripts\dev.ps1 db-reset` | Reset schema (destructive) |
-| `./scripts/dev.sh help` | `.\scripts\dev.ps1 help` | Show help |
-
-## Known Limitations
-
-- **Flutter analyzer** has pre-existing warnings that cause `lint` and `verify` to fail. These are documented technical debt, not regressions.
-- **Web tests** run through the configured non-interactive `npm run test` command.
-- **Docker daemon unavailable** — infrastructure commands fail gracefully with clear message.
-- **Tool availability** — commands gracefully skip when tooling (flutter, dotnet, npm) is not installed.
-
-## Exit Codes
-
-| Scenario | Exit Code |
-|----------|-----------|
-| Success | 0 |
-| Unknown command | 1 |
-| Failed check/verification | 1 |
-| Safety refusal (db-reset) | 1 |
-
-## Documentation
-
-- [Local Setup Guide](local-setup.md)
-- [Docker Environment](docker.md)
-- [Database Reset](database-reset.md)
-- [Current Scripts Audit](current-scripts-audit.md)
+1. **Volume Preservation**: `dev down` executes `docker compose down` without the `-v` flag. Development data in PostgreSQL and Redis is preserved across shutdowns.
+2. **Environment File Protection**: `dev setup` never overwrites existing `.env` or `.env.local` files.
+3. **Graceful Tool Handling**: `dev test` and `dev lint` report warnings and skip components when optional runtimes (e.g. Flutter on a headless server, or .NET on Linux) are not installed. `dev verify` requires all component runtimes to ensure full repository compliance.
+4. **Non-Zero Exit Codes**: When any test or verification check fails, scripts return exit code `1`, making them suitable for CI execution.

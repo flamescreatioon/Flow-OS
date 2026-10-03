@@ -6,20 +6,36 @@ This guide explains how to safely reset the local development database in flowOS
 
 ## 1. Application-Level Schema Reset (Recommended)
 
-When you need to re-run all migrations from scratch without destroying the underlying PostgreSQL container or wiping engine-level extensions (`uuid-ossp`, `pgcrypto`, `uuid_generate_v7()`), use Laravel's `migrate:fresh` command.
+When you need to re-run all migrations from scratch without destroying the underlying PostgreSQL container or wiping engine-level extensions (`uuid-ossp`, `pgcrypto`, `uuid_generate_v7()`), use the repository wrapper or Laravel's `migrate:fresh` command.
 
+### Automated Script (Recommended)
+```powershell
+# Windows PowerShell
+.\scripts\dev.ps1 db-reset
+```
+```bash
+# Linux / macOS / WSL
+./scripts/dev.sh db-reset
+```
+
+The `db-reset` command implements multi-layer safeguards:
+- **Refuses execution** if `APP_ENV=production`.
+- **Refuses execution** if `DB_HOST` is not `127.0.0.1` or `localhost`.
+- **Requires explicit confirmation** by typing `RESET`.
+- Executes `php artisan migrate:fresh --force` on the local database.
+
+### Direct Artisan Execution (Manual Alternative)
 ```bash
 cd apps/api
 php artisan migrate:fresh
 ```
 
-### With Seed Data (Optional)
-If seeders are configured and desired:
-```bash
-php artisan migrate:fresh --seed
-```
+### Seeding Status
+> [!NOTE]
+> **Status: NOT YET ESTABLISHED**
+> As of Sprint 0, domain seeders have not yet been created. Do not expect `php artisan db:seed` or `migrate:fresh --seed` to populate business records. Seeders will be added in Sprint 1 alongside domain models.
 
-### Why this is the preferred approach:
+### Why application schema reset is preferred over volume deletion:
 - **Fast**: Takes 1–2 seconds.
 - **Safe**: Drops only application tables; does not drop the database or database-level extensions.
 - **Preserves Configuration**: The PostgreSQL container stays running and healthy.

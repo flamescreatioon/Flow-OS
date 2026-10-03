@@ -19,7 +19,7 @@ Before contributing code, set up your local development environment:
   # Linux / macOS
   ./scripts/dev.sh up
   ```
-- Refer to [Development Environment ADR](docs/adr/0017-docker-development-environment.md) and [Development Setup Documentation](docs/engineering/development-setup.md) for more details.
+- Refer to [Development Environment ADR](docs/adr/0017-docker-development-environment.md) and [Developer Onboarding Documentation](docs/development/README.md) for more details.
 
 ---
 
@@ -98,7 +98,10 @@ Individual subsystem test commands:
 
 ## 6. Pull Request Process
 
-1. Push your feature branch to GitHub:
+> [!NOTE]
+> **Repository Remote State**: The upstream GitHub remote repository is currently **not configured**. The workflow below represents the canonical PR policy once the remote repository is attached. In the current local state, work is committed to local feature branches.
+
+1. Push your feature branch to GitHub (once remote is attached):
    ```bash
    git push -u origin feature/your-feature-name
    ```
