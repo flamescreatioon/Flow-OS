@@ -42,3 +42,4 @@ When consulting documentation, adhere to the established authority hierarchy:
 9. **Offline Architecture & Sync**: [docs/offline/README.md](offline/README.md)
 10. **HTTP API Contract Authority**: `packages/contracts/openapi/v1.yaml`
 11. **Cloud Database Schema Authority**: Laravel Migrations in `apps/api/database/migrations/`
+12. **Sprint 0 Debt Register**: [docs/engineering/sprint-0-debt-register.md](engineering/sprint-0-debt-register.md)
