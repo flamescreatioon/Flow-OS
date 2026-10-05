@@ -48,6 +48,7 @@
       "@php artisan key:generate --ansi"
     ],
     "test": "phpunit",
+    "test:pgsql": "phpunit --configuration=phpunit.pgsql.xml",
     "test:coverage": "phpunit --coverage-html coverage",
     "lint": "pint",
     "lint:test": "pint --test"

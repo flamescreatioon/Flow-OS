@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\VerifyCsrfToken;
+use App\Models\PersonalAccessToken;
 
 return [
 
@@ -23,7 +24,7 @@ return [
     ],
 
     'personal_access_token' => [
-        'name' => 'flowos-api-token',
+        'model' => PersonalAccessToken::class,
     ],
 
 ];

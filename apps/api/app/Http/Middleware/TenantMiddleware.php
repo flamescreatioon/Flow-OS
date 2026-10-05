@@ -2,10 +2,13 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\OrganizationStatus;
 use App\Models\Organization;
+use App\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use LogicException;
 use Spatie\Multitenancy\Models\Tenant;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -32,7 +35,19 @@ class TenantMiddleware
             ], Response::HTTP_UNAUTHORIZED);
         }
 
-        if (! $user->hasActiveMembershipIn($tenant)) {
+        if ($tenant->status !== OrganizationStatus::Active) {
+            Log::notice('Tenant access denied for an inactive organization.', ['event' => 'tenant.access.denied']);
+
+            return response()->json([
+                'message' => 'This organization is not active.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        $context = app(TenantContext::class);
+
+        try {
+            $context->establish($user, $tenant);
+        } catch (LogicException) {
             Log::notice('Tenant access denied for inactive or missing membership.', ['event' => 'tenant.access.denied']);
 
             return response()->json([
@@ -52,6 +67,7 @@ class TenantMiddleware
             return $next($request);
         } finally {
             Tenant::forgetCurrent();
+            $context->clear();
         }
     }
 

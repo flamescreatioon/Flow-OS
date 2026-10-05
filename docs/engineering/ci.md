@@ -43,7 +43,7 @@ The CI workflow is configured in `.github/workflows/ci.yml` and consists of six 
 | `web` | **Web** | `ubuntu-latest` | 15m | **Yes** | Node 20 setup, npm cache/install (`npm ci`), Jest financial tests (`npm run test`), ESLint (`npm run lint`), TypeScript (`npm run typecheck`), Next.js production build (`npm run build`). |
 | `mobile` | **Mobile** | `ubuntu-latest` | 20m | **Yes** | Flutter stable channel, dependency resolution (`flutter pub get`), Dart formatting (`dart format`), unit/widget tests (`flutter test`), temporary advisory analyze. |
 | `desktop` | **Desktop** | `windows-latest` | 20m | **Yes** | .NET 8 SDK on Windows runner (for WPF), NuGet restore, Release build (`dotnet build`), test execution, C# format check (`dotnet format --verify-no-changes`). |
-| `infrastructure` | **Infrastructure** | `ubuntu-latest` | 15m | **Yes** | PostgreSQL 16 & Redis 7 service containers, Redis ping, extension installation (`01-extensions.sql`), UUIDv7 verification, Laravel PostgreSQL migration smoke (`php artisan migrate --force`). |
+| `infrastructure` | **Infrastructure** | `ubuntu-latest` | 15m | **Yes** | PostgreSQL 16 & Redis 7 service containers, Redis ping, extension installation (`01-extensions.sql`), UUIDv7 verification, Laravel PostgreSQL migration lifecycle, PostgreSQL API suite, and OpenAPI validation. |
 
 ---
 
@@ -82,10 +82,12 @@ The `Infrastructure` job uses ephemeral GitHub Actions service containers to smo
 1. **Redis Smoke**: Executes `redis-cli ping` to confirm container responsiveness.
 2. **PostgreSQL Extension Bootstrap**: Executes `infrastructure/database/init/01-extensions.sql` against PostgreSQL 16 to confirm clean extension compilation and installation.
 3. **UUIDv7 Validation**: Executes `SELECT uuid_generate_v7();` to confirm custom PostgreSQL function availability.
-4. **Laravel PostgreSQL Migration Smoke**: Runs `php artisan migrate --force` and `migrate:status` against the disposable PostgreSQL container.
+4. **Laravel PostgreSQL Migration Lifecycle**: Runs migrate, status, rollback of the latest migration, and reapply against the disposable PostgreSQL container.
+5. **Laravel PostgreSQL API Suite**: Creates the dedicated `flowos_test` database and runs the complete API suite with `phpunit.pgsql.xml`. The test profile rejects any PostgreSQL database other than `flowos_test`.
+6. **OpenAPI validation**: Runs the pinned Redocly CLI from `packages/contracts`.
 
 > [!NOTE]
-> This job is an **Infrastructure Smoke Test**, NOT a full PostgreSQL integration test suite. Normal API unit and feature tests run against SQLite in the `api` job.
+> The normal `api` job remains the fast SQLite suite. The Infrastructure job additionally runs the full API suite against dedicated PostgreSQL test storage.
 
 ---
 

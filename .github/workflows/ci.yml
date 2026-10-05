@@ -74,7 +74,7 @@ jobs:
       - name: Setup test environment
         run: |
           cp .env.example .env
-          php artisan key:generate --env=testing
+          php artisan key:generate
 
       - name: Run Laravel tests (SQLite fast suite)
         run: php artisan test
@@ -182,7 +182,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_DB: flowos_ci
-          POSTGRES_USER: flowos_ci
+          POSTGRES_USER: flowos
           POSTGRES_PASSWORD: flowos_ci_password
         ports:
           - 5432:5432
@@ -217,11 +217,11 @@ jobs:
 
       - name: Apply foundational PostgreSQL extensions
         run: |
-          PGPASSWORD=flowos_ci_password psql -h 127.0.0.1 -U flowos_ci -d flowos_ci -f infrastructure/database/init/01-extensions.sql
+          PGPASSWORD=flowos_ci_password psql -h 127.0.0.1 -U flowos -d flowos_ci -f infrastructure/database/init/01-extensions.sql
 
       - name: Verify UUIDv7 generation in PostgreSQL 16
         run: |
-          PGPASSWORD=flowos_ci_password psql -h 127.0.0.1 -U flowos_ci -d flowos_ci -c "SELECT uuid_generate_v7();"
+          PGPASSWORD=flowos_ci_password psql -h 127.0.0.1 -U flowos -d flowos_ci -c "SELECT uuid_generate_v7();"
 
       - name: Setup PHP for migration smoke test
         uses: shivammathur/setup-php@v2
@@ -234,6 +234,12 @@ jobs:
         working-directory: apps/api
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Prepare Laravel environment for migration
+        working-directory: apps/api
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
       - name: Run Laravel PostgreSQL migration smoke test
         working-directory: apps/api
         env:
@@ -242,10 +248,37 @@ jobs:
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
           DB_DATABASE: flowos_ci
-          DB_USERNAME: flowos_ci
+          DB_USERNAME: flowos
           DB_PASSWORD: flowos_ci_password
         run: |
-          cp .env.example .env
-          php artisan key:generate --env=testing
           php artisan migrate --force
           php artisan migrate:status
+          php artisan migrate:rollback --step=1 --force
+          php artisan migrate --force
+
+      - name: Run Laravel PostgreSQL test suite
+        working-directory: apps/api
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: flowos_test
+          DB_USERNAME: flowos
+          DB_PASSWORD: flowos_ci_password
+        run: |
+          PGPASSWORD=flowos_ci_password psql -h 127.0.0.1 -U flowos -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'flowos_test'" | grep -q 1 || PGPASSWORD=flowos_ci_password createdb -h 127.0.0.1 -U flowos flowos_test
+          ./vendor/bin/phpunit --configuration=phpunit.pgsql.xml
+
+      - name: Setup Node.js for contract validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: packages/contracts/package-lock.json
+
+      - name: Validate OpenAPI contract
+        working-directory: packages/contracts
+        run: |
+          npm ci
+          npm run lint:openapi

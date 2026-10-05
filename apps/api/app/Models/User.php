@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Enums\MembershipStatus;
+use App\Enums\UserStatus;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Ramsey\Uuid\Uuid;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -34,7 +36,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'is_active' => 'boolean',
+        'status' => UserStatus::class,
     ];
 
     protected static function booted(): void
@@ -44,14 +46,6 @@ class User extends Authenticatable
                 $model->id = Uuid::uuid7()->toString();
             }
         });
-    }
-
-    /**
-     * Legacy/default organization relationship retained during the membership migration.
-     */
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class);
     }
 
     public function memberships(): HasMany
@@ -64,7 +58,7 @@ class User extends Authenticatable
         $organizationId = $organization instanceof Organization ? $organization->getKey() : $organization;
 
         return $this->memberships()
-            ->active()
+            ->where('status', MembershipStatus::Active)
             ->where('organization_id', $organizationId)
             ->exists();
     }

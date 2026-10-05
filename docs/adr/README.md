@@ -28,5 +28,8 @@ Current architecture is described in the [architecture entrypoint](../architectu
 | 0022 | Establish Observability Foundation | ACCEPTED | Request IDs, safe logs, audit separation. |
 | 0023 | Shared-Schema Tenancy and Membership Authorization | ACCEPTED | Supersedes ADR 0008 and ADR 0010. |
 | 0024 | Modular Monolith Architecture | ACCEPTED | Records the server architectural style. |
+| 0025 | Core Platform Contract and Schema Hardening | ACCEPTED | Standardizes platform identity, lifecycle, hierarchy constraints, and tenant context. |
+| 0026 | Platform Authentication Foundation | ACCEPTED | Sanctum sessions for web and tokens for mobile/desktop, separate from tenant authorization. |
+| 0027 | Organization Lifecycle | ACCEPTED | Transactional bootstrap membership and explicit organization lifecycle. |
 
 Use [the ADR template](template.md) for future significant decisions. An ADR is required for changes to tenancy, authentication, primary source of truth, offline conflict model, financial representation, architecture style, major infrastructure, or deployment architecture. Routine fixes, tests, refactors, and ordinary endpoints under existing boundaries do not require one.

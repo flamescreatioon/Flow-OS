@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MembershipStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,8 +12,6 @@ use Ramsey\Uuid\Uuid;
 class OrganizationMembership extends Model
 {
     use HasFactory;
-
-    public const STATUS_ACTIVE = 'active';
 
     protected $table = 'organization_memberships';
 
@@ -30,6 +29,9 @@ class OrganizationMembership extends Model
 
     protected $casts = [
         'joined_at' => 'datetime',
+        'suspended_at' => 'datetime',
+        'revoked_at' => 'datetime',
+        'status' => MembershipStatus::class,
     ];
 
     protected static function booted(): void
@@ -43,7 +45,7 @@ class OrganizationMembership extends Model
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', self::STATUS_ACTIVE);
+        return $query->where('status', MembershipStatus::Active);
     }
 
     public function user(): BelongsTo

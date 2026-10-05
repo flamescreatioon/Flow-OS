@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BranchStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,14 +20,20 @@ class Branch extends Model
 
     protected $fillable = [
         'name',
-        'address',
+        'code',
         'phone',
         'email',
-        'is_main',
+        'address_line_1',
+        'address_line_2',
+        'city',
+        'state',
+        'country_code',
+        'is_primary',
     ];
 
     protected $casts = [
-        'is_main' => 'boolean',
+        'is_primary' => 'boolean',
+        'status' => BranchStatus::class,
     ];
 
     protected static function booted(): void
@@ -34,6 +41,13 @@ class Branch extends Model
         static::creating(function (self $model) {
             if (empty($model->id)) {
                 $model->id = Uuid::uuid7()->toString();
+            }
+            $model->code = strtoupper($model->code);
+        });
+
+        static::updating(function (self $model) {
+            if ($model->isDirty('code')) {
+                $model->code = strtoupper($model->code);
             }
         });
     }

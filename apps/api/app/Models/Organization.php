@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrganizationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Ramsey\Uuid\Uuid;
@@ -19,14 +20,24 @@ class Organization extends Tenant
 
     protected $fillable = [
         'name',
+        'legal_name',
+        'business_type',
+        'registration_number',
+        'tax_identification_number',
         'slug',
         'timezone',
         'currency',
+        'country_code',
+        'currency_code',
+        'phone',
+        'email',
+        'address',
         'settings',
     ];
 
     protected $casts = [
         'settings' => 'array',
+        'status' => OrganizationStatus::class,
     ];
 
     protected static function booted(): void
@@ -41,14 +52,6 @@ class Organization extends Tenant
     public function branches(): HasMany
     {
         return $this->hasMany(Branch::class);
-    }
-
-    /**
-     * Legacy relationship retained while users.organization_id remains available.
-     */
-    public function users(): HasMany
-    {
-        return $this->hasMany(User::class);
     }
 
     public function memberships(): HasMany

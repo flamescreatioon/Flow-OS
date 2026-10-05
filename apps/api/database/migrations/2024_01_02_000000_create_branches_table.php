@@ -10,13 +10,19 @@ return new class extends Migration
     {
         Schema::create('branches', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('organization_id')->constrained('organizations')->cascadeOnDelete();
+            $table->foreignUuid('organization_id')->constrained('organizations')->restrictOnDelete();
             $table->string('name', 255);
+            $table->string('code', 50);
             $table->text('address')->nullable();
             $table->string('phone', 50)->nullable();
             $table->string('email', 255)->nullable();
-            $table->boolean('is_main')->default(false);
+            $table->boolean('is_primary')->default(false);
+            $table->string('status', 20)->default('active');
             $table->timestampsTz();
+
+            $table->unique(['organization_id', 'code']);
+            $table->index(['organization_id', 'status']);
+            $table->index('status');
         });
     }
 

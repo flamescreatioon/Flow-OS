@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\PersonalAccessToken;
+use App\Tenancy\TenantContext;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Multitenancy\Multitenancy;
@@ -14,6 +16,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         Sanctum::ignoreMigrations();
+        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+
+        $this->app->scoped(TenantContext::class);
 
         $this->app->alias(Multitenancy::class, 'multitenancy');
     }

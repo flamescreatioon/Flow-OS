@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\OrganizationStatus;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Ramsey\Uuid\Uuid;
@@ -22,6 +23,7 @@ class OrganizationFactory extends Factory
             'timezone' => 'Africa/Lagos',
             'currency' => 'NGN',
             'settings' => [],
+            'status' => OrganizationStatus::Active,
         ];
     }
 }

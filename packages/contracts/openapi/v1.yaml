@@ -5,8 +5,8 @@ info:
   description: |
     flowOS Business Operating System API
 
-    **Implementation status:** only `GET /health` is implemented in this repository.
-    All other paths retained in this v1 file are planned contracts and must not be
+    **Implementation status:** `GET /health`, Organization lifecycle, and Branch management are implemented in this repository.
+    Other paths retained in this v1 file are planned contracts and must not be
     treated as deployed endpoints.
 
     ## Authentication
@@ -59,7 +59,7 @@ paths:
 
   /organizations:
     get:
-      summary: List organizations (admin only)
+      summary: List organizations available through active membership
       operationId: listOrganizations
       tags:
         - Organizations
@@ -81,7 +81,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
 
     post:
-      summary: Create a new organization
+      summary: Create an organization and bootstrap the creator membership
       operationId: createOrganization
       tags:
         - Organizations
@@ -183,15 +183,64 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /branches:
+  /organizations/{organization}/suspend:
+    post:
+      summary: Suspend an organization
+      operationId: suspendOrganization
+      tags: [Organizations]
+      parameters:
+        - name: organization
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Organization suspended }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /organizations/{organization}/activate:
+    post:
+      summary: Activate a suspended organization
+      operationId: activateOrganization
+      tags: [Organizations]
+      parameters:
+        - name: organization
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Organization activated }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /organizations/{organization}/close:
+    post:
+      summary: Close an organization permanently
+      operationId: closeOrganization
+      tags: [Organizations]
+      parameters:
+        - name: organization
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Organization closed }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /organizations/{organization}/branches:
     get:
-      summary: List branches for current organization
+      summary: List branches for organization
       operationId: listBranches
       tags:
         - Branches
       security:
         - bearerAuth: []
       parameters:
+        - $ref: '#/components/parameters/OrganizationId'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
       responses:
@@ -203,6 +252,10 @@ paths:
                 $ref: '#/components/schemas/PaginatedBranchesResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
     post:
       summary: Create a new branch
@@ -211,6 +264,8 @@ paths:
         - Branches
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrganizationId'
       requestBody:
         required: true
         content:
@@ -228,10 +283,14 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
 
-  /branches/{id}:
+  /organizations/{organization}/branches/{branch}:
     get:
       summary: Get branch by ID
       operationId: getBranch
@@ -240,6 +299,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - $ref: '#/components/parameters/OrganizationId'
         - $ref: '#/components/parameters/BranchId'
       responses:
         '200':
@@ -250,6 +310,8 @@ paths:
                 $ref: '#/components/schemas/BranchResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -261,6 +323,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - $ref: '#/components/parameters/OrganizationId'
         - $ref: '#/components/parameters/BranchId'
       requestBody:
         required: true
@@ -279,27 +342,120 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
 
-    delete:
-      summary: Delete branch
-      operationId: deleteBranch
+  /organizations/{organization}/branches/{branch}/activate:
+    post:
+      summary: Activate an inactive branch
+      operationId: activateBranch
       tags:
         - Branches
       security:
         - bearerAuth: []
       parameters:
+        - $ref: '#/components/parameters/OrganizationId'
         - $ref: '#/components/parameters/BranchId'
       responses:
-        '204':
-          description: Branch deleted
+        '200':
+          description: Branch activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{organization}/branches/{branch}/deactivate:
+    post:
+      summary: Deactivate an active branch
+      operationId: deactivateBranch
+      tags:
+        - Branches
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/BranchId'
+      responses:
+        '200':
+          description: Branch deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{organization}/branches/{branch}/close:
+    post:
+      summary: Close an active or inactive branch
+      operationId: closeBranch
+      tags:
+        - Branches
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/BranchId'
+      responses:
+        '200':
+          description: Branch closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{organization}/branches/{branch}/make-primary:
+    post:
+      summary: Make a branch the primary branch for the organization
+      operationId: makeBranchPrimary
+      tags:
+        - Branches
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/BranchId'
+      responses:
+        '200':
+          description: Branch made primary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
 
   /users:
     get:
@@ -421,8 +577,7 @@ paths:
 
   /auth/login:
     post:
-      summary: Login and get access token
-      description: Planned contract; this endpoint is not implemented in Sprint 0.10.
+      summary: Create a browser session
       operationId: login
       tags:
         - Authentication
@@ -431,14 +586,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/AuthLoginRequest'
       responses:
         '200':
-          description: Login successful
+          description: Browser session created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                $ref: '#/components/schemas/AuthenticatedUserResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
@@ -447,7 +602,6 @@ paths:
   /auth/logout:
     post:
       summary: Logout and revoke token
-      description: Planned contract; this endpoint is not implemented in Sprint 0.10.
       operationId: logout
       tags:
         - Authentication
@@ -462,7 +616,6 @@ paths:
   /auth/me:
     get:
       summary: Get current authenticated user
-      description: Planned contract; this endpoint is not implemented in Sprint 0.10.
       operationId: getCurrentUser
       tags:
         - Authentication
@@ -474,9 +627,117 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserResponse'
+                $ref: '#/components/schemas/AuthenticatedUserResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /auth/register:
+    post:
+      summary: Register a platform user
+      operationId: register
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthRegisterRequest' }
+      responses:
+        '201':
+          description: Platform user created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthenticatedUserResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/token:
+    post:
+      summary: Create a mobile or desktop personal access token
+      operationId: createToken
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthTokenRequest' }
+      responses:
+        '201':
+          description: Token created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/logout-all:
+    post:
+      summary: Revoke all personal access tokens and end the current session when applicable
+      operationId: logoutAll
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Authentication state cleared }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/forgot-password:
+    post:
+      summary: Request a password reset link
+      operationId: forgotPassword
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForgotPasswordRequest' }
+      responses:
+        '202': { description: Request accepted without disclosing account existence }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/reset-password:
+    post:
+      summary: Reset a password with a broker token
+      operationId: resetPassword
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetPasswordRequest' }
+      responses:
+        '200': { description: Password reset }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/email/verification-notification:
+    post:
+      summary: Send an email verification notification
+      operationId: sendEmailVerificationNotification
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Already verified }
+        '202': { description: Verification link sent }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/email/verify/{id}/{hash}:
+    get:
+      summary: Verify an email using a signed URL
+      operationId: verifyEmail
+      tags: [Authentication]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/UUID' }
+        - name: hash
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Email verified or already verified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthenticatedUserResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
 components:
   securitySchemes:
@@ -539,6 +800,27 @@ components:
         format: uuid
 
   schemas:
+    UUID:
+      type: string
+      format: uuid
+      example: "018f4c8e-7b3d-7c8a-9f4e-1a2b3c4d5e6f"
+
+    UserStatus:
+      type: string
+      enum: [active, suspended, disabled]
+
+    OrganizationStatus:
+      type: string
+      enum: [active, suspended, closed]
+
+    MembershipStatus:
+      type: string
+      enum: [invited, active, suspended, revoked]
+
+    BranchStatus:
+      type: string
+      enum: [active, inactive, closed]
+
     HealthResponse:
       type: object
       properties:
@@ -553,12 +835,19 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
-          example: "018f4c8e-7b3d-7c8a-9f4e-1a2b3c4d5e6f"
+          $ref: '#/components/schemas/UUID'
         name:
           type: string
           example: "Acme Trading Co."
+        legal_name:
+          type: string
+          nullable: true
+        business_type:
+          type: string
+          nullable: true
+        registration_number:
+          type: string
+          nullable: true
         slug:
           type: string
           example: "acme-trading"
@@ -568,9 +857,21 @@ components:
         currency:
           type: string
           example: "NGN"
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        address:
+          type: string
+          nullable: true
         settings:
           type: object
           nullable: true
+        status:
+          $ref: '#/components/schemas/OrganizationStatus'
         created_at:
           type: string
           format: date-time
@@ -641,28 +942,44 @@ components:
         total:
           type: integer
 
-    Branch:
+Branch:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/UUID'
         organization_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/UUID'
         name:
           type: string
-        address:
+        code:
           type: string
-          nullable: true
         phone:
           type: string
           nullable: true
         email:
           type: string
+          format: email
           nullable: true
-        is_main:
+        address_line_1:
+          type: string
+          nullable: true
+        address_line_2:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        state:
+          type: string
+          nullable: true
+        country_code:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          nullable: true
+        is_primary:
           type: boolean
+        status:
+          $ref: '#/components/schemas/BranchStatus'
         created_at:
           type: string
           format: date-time
@@ -674,21 +991,38 @@ components:
       type: object
       required:
         - name
+        - code
       properties:
         name:
           type: string
           minLength: 1
           maxLength: 255
-        address:
+        code:
           type: string
-          maxLength: 500
+          minLength: 1
+          maxLength: 50
         phone:
           type: string
           maxLength: 50
         email:
           type: string
           format: email
-        is_main:
+        address_line_1:
+          type: string
+          maxLength: 255
+        address_line_2:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        country_code:
+          type: string
+          pattern: '^[A-Z]{2}$'
+        is_primary:
           type: boolean
           default: false
 
@@ -699,17 +1033,31 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-        address:
+        code:
           type: string
-          maxLength: 500
+          minLength: 1
+          maxLength: 50
         phone:
           type: string
           maxLength: 50
         email:
           type: string
           format: email
-        is_main:
-          type: boolean
+        address_line_1:
+          type: string
+          maxLength: 255
+        address_line_2:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        country_code:
+          type: string
+          pattern: '^[A-Z]{2}$'
 
     BranchResponse:
       type: object
@@ -737,21 +1085,14 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
-        organization_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/UUID'
         name:
           type: string
         email:
           type: string
           format: email
-        role:
-          type: string
-          enum: [owner, admin, manager, cashier, viewer]
-        is_active:
-          type: boolean
+        status:
+          $ref: '#/components/schemas/UserStatus'
         created_at:
           type: string
           format: date-time
@@ -765,7 +1106,6 @@ components:
         - name
         - email
         - password
-        - role
       properties:
         name:
           type: string
@@ -778,9 +1118,6 @@ components:
           type: string
           format: password
           minLength: 8
-        role:
-          type: string
-          enum: [admin, manager, cashier, viewer]
 
     UpdateUserRequest:
       type: object
@@ -792,11 +1129,38 @@ components:
         email:
           type: string
           format: email
-        role:
+        status:
+          $ref: '#/components/schemas/UserStatus'
+
+    OrganizationMembership:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        user_id:
+          $ref: '#/components/schemas/UUID'
+        status:
+          $ref: '#/components/schemas/MembershipStatus'
+        joined_at:
           type: string
-          enum: [admin, manager, cashier, viewer]
-        is_active:
-          type: boolean
+          format: date-time
+          nullable: true
+        suspended_at:
+          type: string
+          format: date-time
+          nullable: true
+        revoked_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
 
     UserResponse:
       type: object
@@ -820,12 +1184,12 @@ components:
         total:
           type: integer
 
-    LoginRequest:
+    AuthRegisterRequest:
       type: object
       required:
         - email
         - password
-        - organization_slug
+        - password_confirmation
       properties:
         email:
           type: string
@@ -833,18 +1197,52 @@ components:
         password:
           type: string
           format: password
-        organization_slug:
+        password_confirmation:
           type: string
+          format: password
 
-    LoginResponse:
+    AuthLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    AuthTokenRequest:
+      allOf:
+        - $ref: '#/components/schemas/AuthLoginRequest'
+        - type: object
+          required: [client_name]
+          properties:
+            client_name: { type: string, maxLength: 255 }
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+
+    ResetPasswordRequest:
+      type: object
+      required: [email, token, password, password_confirmation]
+      properties:
+        email: { type: string, format: email }
+        token: { type: string }
+        password: { type: string, format: password }
+        password_confirmation: { type: string, format: password }
+
+    AuthenticatedUserResponse:
       type: object
       properties:
-        token:
-          type: string
-        user:
-          $ref: '#/components/schemas/User'
-        organization:
-          $ref: '#/components/schemas/Organization'
+        data: { $ref: '#/components/schemas/User' }
+
+    TokenResponse:
+      type: object
+      required: [token, token_type, user]
+      properties:
+        token: { type: string }
+        token_type: { type: string, enum: [Bearer] }
+        user: { $ref: '#/components/schemas/User' }
 
     ValidationError:
       type: object
