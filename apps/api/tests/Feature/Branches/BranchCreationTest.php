@@ -2,13 +2,10 @@
 
 namespace Tests\Feature\Branches;
 
-use App\Enums\BranchStatus;
-use App\Enums\MembershipStatus;
 use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
-use Illuminate\Database\QueryException;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -22,7 +19,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Lagos Branch',
                 'code' => 'LAG',
                 'phone' => '+2348012345678',
@@ -49,7 +46,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Lagos Branch',
                 'code' => 'LAG',
             ])
@@ -64,7 +61,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Lagos Branch',
                 'code' => 'LAG',
             ])
@@ -79,7 +76,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Lagos Branch',
                 'code' => 'LAG',
             ])
@@ -94,7 +91,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Lagos Branch',
                 'code' => 'LAG',
             ])
@@ -109,7 +106,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Lagos Branch',
                 'code' => 'LAG',
             ])
@@ -124,7 +121,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'First Branch',
                 'code' => 'FIRST',
             ]);
@@ -141,7 +138,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'First Branch',
                 'code' => 'FIRST',
                 'is_primary' => false,
@@ -159,7 +156,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Test Branch',
                 'code' => 'TEST',
             ]);
@@ -177,7 +174,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Test Branch',
                 'code' => 'TEST',
             ]);
@@ -197,7 +194,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Test Branch',
                 'code' => 'lowercase',
             ]);
@@ -215,7 +212,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Another Lagos Branch',
                 'code' => 'LAGOS',
             ])
@@ -233,7 +230,7 @@ class BranchCreationTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organizationB->id])
-            ->postJson('/api/v1/organizations/' . $organizationB->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organizationB->id.'/branches', [
                 'name' => 'Main Branch',
                 'code' => 'MAIN',
             ]);

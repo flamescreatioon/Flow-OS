@@ -26,4 +26,18 @@ class OrganizationFactory extends Factory
             'status' => OrganizationStatus::Active,
         ];
     }
+
+    public function suspended(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => OrganizationStatus::Suspended,
+        ]);
+    }
+
+    public function closed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => OrganizationStatus::Closed,
+        ]);
+    }
 }

@@ -3,7 +3,6 @@
 namespace Tests\Feature\Branches;
 
 use App\Enums\BranchStatus;
-use App\Enums\MembershipStatus;
 use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
@@ -22,7 +21,7 @@ class BranchLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/deactivate');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/deactivate');
 
         $response->assertOk()
             ->assertJsonPath('data.status', 'inactive');
@@ -37,7 +36,7 @@ class BranchLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/activate');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/activate');
 
         $response->assertOk()
             ->assertJsonPath('data.status', 'active');
@@ -52,7 +51,7 @@ class BranchLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/close');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/close');
 
         $response->assertOk()
             ->assertJsonPath('data.status', 'closed');
@@ -67,7 +66,7 @@ class BranchLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/close');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/close');
 
         $response->assertOk()
             ->assertJsonPath('data.status', 'closed');
@@ -82,7 +81,7 @@ class BranchLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/activate');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/activate');
 
         $response->assertUnprocessable();
     }
@@ -96,7 +95,7 @@ class BranchLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/deactivate');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/deactivate');
 
         $response->assertUnprocessable();
     }
@@ -110,7 +109,7 @@ class BranchLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/deactivate');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/deactivate');
 
         $response->assertUnprocessable()
             ->assertJsonPath('message', 'Primary branch cannot be deactivated or closed. Make another branch primary first.');
@@ -125,7 +124,7 @@ class BranchLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/close');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/close');
 
         $response->assertUnprocessable()
             ->assertJsonPath('message', 'Primary branch cannot be deactivated or closed. Make another branch primary first.');
@@ -140,11 +139,11 @@ class BranchLifecycleTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/deactivate')
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/deactivate')
             ->assertOk();
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/activate')
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/activate')
             ->assertOk()
             ->assertJsonPath('data.status', 'active');
     }
@@ -159,11 +158,11 @@ class BranchLifecycleTest extends TestCase
 
         // Deactivate twice
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/deactivate')
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/deactivate')
             ->assertOk();
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/deactivate');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/deactivate');
 
         $response->assertUnprocessable();
     }

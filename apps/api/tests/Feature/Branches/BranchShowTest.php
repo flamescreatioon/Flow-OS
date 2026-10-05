@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Branches;
 
-use App\Enums\MembershipStatus;
 use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
@@ -21,7 +20,7 @@ class BranchShowTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->getJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id);
+            ->getJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id);
 
         $response->assertOk()
             ->assertJsonPath('data.id', $branch->id)
@@ -40,7 +39,7 @@ class BranchShowTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organizationA->id])
-            ->getJson('/api/v1/organizations/' . $organizationA->id . '/branches/' . $branch->id);
+            ->getJson('/api/v1/organizations/'.$organizationA->id.'/branches/'.$branch->id);
 
         $response->assertNotFound();
     }
@@ -55,7 +54,7 @@ class BranchShowTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->getJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id);
+            ->getJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id);
 
         $response->assertForbidden();
     }
@@ -69,7 +68,7 @@ class BranchShowTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->getJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id);
+            ->getJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id);
 
         $response->assertForbidden();
     }
@@ -94,7 +93,7 @@ class BranchShowTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->getJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id);
+            ->getJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id);
 
         $response->assertOk()
             ->assertJsonPath('data.name', 'Full Branch')

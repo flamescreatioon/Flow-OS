@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Application\Branches\BranchLifecycleService;
 use App\Application\Branches\BranchPrimaryService;
 use App\Application\Branches\BranchService;
-use App\Enums\BranchStatus;
 use App\Http\Requests\Branches\StoreBranchRequest;
 use App\Http\Requests\Branches\UpdateBranchRequest;
 use App\Http\Resources\BranchResource;
@@ -29,12 +28,14 @@ class BranchController
     public function store(StoreBranchRequest $request, Organization $organization, BranchService $service)
     {
         $branch = $service->create($organization, $request->validated());
+
         return (new BranchResource($branch))->response()->setStatusCode(201);
     }
 
     public function show(Request $request, Organization $organization, Branch $branch)
     {
         $this->assertBranchBelongsToOrganization($branch, $organization);
+
         return new BranchResource($branch);
     }
 

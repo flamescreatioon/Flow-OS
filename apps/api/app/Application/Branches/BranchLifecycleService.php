@@ -16,12 +16,14 @@ final class BranchLifecycleService
     public function deactivate(Branch $branch): Branch
     {
         $this->assertNotPrimary($branch);
+
         return $this->transition($branch, BranchStatus::Inactive);
     }
 
     public function close(Branch $branch): Branch
     {
         $this->assertNotPrimary($branch);
+
         return $this->transition($branch, BranchStatus::Closed);
     }
 

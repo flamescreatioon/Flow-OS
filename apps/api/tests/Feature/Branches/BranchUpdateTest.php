@@ -3,7 +3,6 @@
 namespace Tests\Feature\Branches;
 
 use App\Enums\BranchStatus;
-use App\Enums\MembershipStatus;
 use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
@@ -22,7 +21,7 @@ class BranchUpdateTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->patchJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id, [
+            ->patchJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id, [
                 'name' => 'Updated Name',
                 'phone' => '+2348012345678',
                 'email' => 'updated@example.com',
@@ -54,7 +53,7 @@ class BranchUpdateTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->patchJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id, [
+            ->patchJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id, [
                 'code' => 'EXISTING',
             ]);
 
@@ -72,7 +71,7 @@ class BranchUpdateTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organizationA->id])
-            ->patchJson('/api/v1/organizations/' . $organizationA->id . '/branches/' . $branch->id, [
+            ->patchJson('/api/v1/organizations/'.$organizationA->id.'/branches/'.$branch->id, [
                 'organization_id' => $organizationB->id,
             ]);
 
@@ -92,7 +91,7 @@ class BranchUpdateTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->patchJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id, [
+            ->patchJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id, [
                 'status' => 'closed',
             ]);
 
@@ -112,7 +111,7 @@ class BranchUpdateTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->patchJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id, [
+            ->patchJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id, [
                 'is_primary' => true,
             ]);
 
@@ -134,7 +133,7 @@ class BranchUpdateTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organizationA->id])
-            ->patchJson('/api/v1/organizations/' . $organizationA->id . '/branches/' . $branch->id, [
+            ->patchJson('/api/v1/organizations/'.$organizationA->id.'/branches/'.$branch->id, [
                 'name' => 'Updated',
             ]);
 
@@ -150,7 +149,7 @@ class BranchUpdateTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->patchJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id, [
+            ->patchJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id, [
                 'code' => 'newcode',
             ]);
 

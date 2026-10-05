@@ -3,7 +3,6 @@
 namespace Tests\Feature\Branches;
 
 use App\Enums\BranchStatus;
-use App\Enums\MembershipStatus;
 use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
@@ -21,7 +20,7 @@ class BranchPrimaryTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'First Branch',
                 'code' => 'FIRST',
             ]);
@@ -39,7 +38,7 @@ class BranchPrimaryTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches', [
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches', [
                 'name' => 'Second Branch',
                 'code' => 'SECOND',
             ]);
@@ -62,7 +61,7 @@ class BranchPrimaryTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $second->id . '/make-primary');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$second->id.'/make-primary');
 
         $response->assertOk()
             ->assertJsonPath('data.is_primary', true);
@@ -84,7 +83,7 @@ class BranchPrimaryTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $second->id . '/make-primary')
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$second->id.'/make-primary')
             ->assertOk();
 
         $first->refresh();
@@ -102,11 +101,11 @@ class BranchPrimaryTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $second->id . '/make-primary')
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$second->id.'/make-primary')
             ->assertOk();
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $third->id . '/make-primary')
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$third->id.'/make-primary')
             ->assertOk();
 
         $primaries = Branch::where('organization_id', $organization->id)->where('is_primary', true)->count();
@@ -122,7 +121,7 @@ class BranchPrimaryTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/make-primary');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/make-primary');
 
         $response->assertUnprocessable()
             ->assertJsonPath('message', 'Only active branches can be made primary.');
@@ -137,7 +136,7 @@ class BranchPrimaryTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/make-primary');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/make-primary');
 
         $response->assertUnprocessable()
             ->assertJsonPath('message', 'Only active branches can be made primary.');
@@ -154,7 +153,7 @@ class BranchPrimaryTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organizationA->id])
-            ->postJson('/api/v1/organizations/' . $organizationA->id . '/branches/' . $branch->id . '/make-primary');
+            ->postJson('/api/v1/organizations/'.$organizationA->id.'/branches/'.$branch->id.'/make-primary');
 
         $response->assertNotFound();
     }
@@ -168,7 +167,7 @@ class BranchPrimaryTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->postJson('/api/v1/organizations/' . $organization->id . '/branches/' . $branch->id . '/make-primary');
+            ->postJson('/api/v1/organizations/'.$organization->id.'/branches/'.$branch->id.'/make-primary');
 
         $response->assertOk()
             ->assertJsonPath('data.is_primary', true);

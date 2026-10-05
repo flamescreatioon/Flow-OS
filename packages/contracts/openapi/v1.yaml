@@ -240,7 +240,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
       responses:
@@ -265,7 +265,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
       requestBody:
         required: true
         content:
@@ -299,7 +299,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
       responses:
         '200':
@@ -323,7 +323,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
       requestBody:
         required: true
@@ -358,7 +358,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
       responses:
         '200':
@@ -385,7 +385,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
       responses:
         '200':
@@ -412,7 +412,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
       responses:
         '200':
@@ -439,7 +439,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
       responses:
         '200':
@@ -781,8 +781,17 @@ components:
         type: string
         format: uuid
 
+    NestedOrganizationId:
+      name: organization
+      in: path
+      required: true
+      description: Organization UUID
+      schema:
+        type: string
+        format: uuid
+
     BranchId:
-      name: id
+      name: branch
       in: path
       required: true
       description: Branch UUID
@@ -942,7 +951,7 @@ components:
         total:
           type: integer
 
-Branch:
+    Branch:
       type: object
       properties:
         id:

@@ -3,7 +3,6 @@
 namespace Tests\Feature\Branches;
 
 use App\Enums\BranchStatus;
-use App\Enums\MembershipStatus;
 use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
@@ -27,7 +26,7 @@ class BranchListingTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organizationA->id])
-            ->getJson('/api/v1/organizations/' . $organizationA->id . '/branches');
+            ->getJson('/api/v1/organizations/'.$organizationA->id.'/branches');
 
         $response->assertOk()
             ->assertJsonCount(2, 'data')
@@ -47,7 +46,7 @@ class BranchListingTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->getJson('/api/v1/organizations/' . $organization->id . '/branches');
+            ->getJson('/api/v1/organizations/'.$organization->id.'/branches');
 
         $response->assertOk()
             ->assertJsonCount(3, 'data');
@@ -68,7 +67,7 @@ class BranchListingTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organizationA->id])
-            ->getJson('/api/v1/organizations/' . $organizationA->id . '/branches');
+            ->getJson('/api/v1/organizations/'.$organizationA->id.'/branches');
 
         $response->assertOk()
             ->assertJsonCount(0, 'data');
@@ -84,7 +83,7 @@ class BranchListingTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->getJson('/api/v1/organizations/' . $organization->id . '/branches')
+            ->getJson('/api/v1/organizations/'.$organization->id.'/branches')
             ->assertForbidden();
     }
 
@@ -97,7 +96,7 @@ class BranchListingTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->getJson('/api/v1/organizations/' . $organization->id . '/branches')
+            ->getJson('/api/v1/organizations/'.$organization->id.'/branches')
             ->assertForbidden();
     }
 
@@ -112,7 +111,7 @@ class BranchListingTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
-            ->getJson('/api/v1/organizations/' . $organization->id . '/branches');
+            ->getJson('/api/v1/organizations/'.$organization->id.'/branches');
 
         $response->assertOk()
             ->assertJsonPath('data.0.name', 'Primary Branch')

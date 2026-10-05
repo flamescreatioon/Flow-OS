@@ -2,6 +2,7 @@
 
 namespace App\Application\Branches;
 
+use App\Enums\BranchStatus;
 use App\Models\Branch;
 use App\Models\Organization;
 use Illuminate\Support\Facades\DB;
@@ -13,13 +14,13 @@ final class BranchService
         return DB::transaction(function () use ($organization, $data) {
             $isFirstBranch = $organization->branches()->count() === 0;
 
-            $branch = Branch::create(array_merge($data, [
-                'organization_id' => $organization->id,
-                'status' => 'active',
-                'is_primary' => $isFirstBranch ? true : ($data['is_primary'] ?? false),
-            ]));
+            $branch = new Branch($data);
+            $branch->organization_id = $organization->id;
+            $branch->status = BranchStatus::Active;
+            $branch->is_primary = $isFirstBranch ? true : ($data['is_primary'] ?? false);
+            $branch->save();
 
-            if ($branch->is_primary && !$isFirstBranch) {
+            if ($branch->is_primary && ! $isFirstBranch) {
                 $this->ensureSinglePrimary($organization, $branch);
             }
 
