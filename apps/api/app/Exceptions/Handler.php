@@ -6,6 +6,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -82,6 +83,9 @@ class Handler extends ExceptionHandler
             }
             if ($e instanceof ModelNotFoundException) {
                 return $this->apiError($request, ['error' => ['code' => 'RESOURCE_NOT_FOUND', 'message' => 'Resource not found.']], 404);
+            }
+            if ($e instanceof ThrottleRequestsException) {
+                return $this->apiError($request, ['error' => ['code' => 'RATE_LIMITED', 'message' => 'Too many requests.']], 429);
             }
 
             if (! config('app.debug')) {

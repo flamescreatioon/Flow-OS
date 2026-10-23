@@ -5,18 +5,20 @@ namespace Tests\Feature\Branches;
 use App\Enums\BranchStatus;
 use App\Models\Branch;
 use App\Models\Organization;
-use App\Models\OrganizationMembership;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithRbac;
 use Tests\TestCase;
 
 class BranchUpdateTest extends TestCase
 {
+    use WithRbac;
+
     public function test_allowed_profile_fields_work(): void
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $branch = Branch::factory()->for($organization)->create(['name' => 'Original Name']);
         Sanctum::actingAs($user);
 
@@ -47,7 +49,7 @@ class BranchUpdateTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Branch::factory()->for($organization)->create(['code' => 'EXISTING']);
         $branch = Branch::factory()->for($organization)->create(['code' => 'OTHER']);
         Sanctum::actingAs($user);
@@ -65,8 +67,8 @@ class BranchUpdateTest extends TestCase
         $user = User::factory()->create();
         $organizationA = Organization::factory()->create();
         $organizationB = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationA)->active()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationB)->active()->create();
+        $this->createOrganizationAdmin($organizationA, $user);
+        $this->createOrganizationAdmin($organizationB, $user);
         $branch = Branch::factory()->for($organizationA)->create();
         Sanctum::actingAs($user);
 
@@ -86,7 +88,7 @@ class BranchUpdateTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $branch = Branch::factory()->for($organization)->create(['status' => BranchStatus::Active]);
         Sanctum::actingAs($user);
 
@@ -106,7 +108,7 @@ class BranchUpdateTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $branch = Branch::factory()->for($organization)->create(['is_primary' => false]);
         Sanctum::actingAs($user);
 
@@ -127,8 +129,8 @@ class BranchUpdateTest extends TestCase
         $user = User::factory()->create();
         $organizationA = Organization::factory()->create();
         $organizationB = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationA)->active()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationB)->active()->create();
+        $this->createOrganizationAdmin($organizationA, $user);
+        $this->createOrganizationAdmin($organizationB, $user);
         $branch = Branch::factory()->for($organizationB)->create(['name' => 'Original']);
         Sanctum::actingAs($user);
 
@@ -144,7 +146,7 @@ class BranchUpdateTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $branch = Branch::factory()->for($organization)->create(['code' => 'OLD']);
         Sanctum::actingAs($user);
 

@@ -6,10 +6,13 @@ use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithRbac;
 use Tests\TestCase;
 
 class OrganizationLifecycleTest extends TestCase
 {
+    use WithRbac;
+
     public function test_active_user_creates_organization_and_bootstrap_membership(): void
     {
         $user = User::factory()->create();
@@ -27,9 +30,12 @@ class OrganizationLifecycleTest extends TestCase
         $user = User::factory()->create();
         $other = User::factory()->create();
         $org = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($org)->active()->create();
+        $this->createOrganizationAdmin($org, $user);
         Sanctum::actingAs($user);
-        $this->getJson('/api/v1/organizations')->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson('/api/v1/organizations')->assertOk()
+            ->assertJsonStructure(['data', 'meta', 'links'])
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('meta.total', 1);
         $this->getJson('/api/v1/organizations/'.$org->id)->assertOk();
         $this->patchJson('/api/v1/organizations/'.$org->id, ['name' => 'Renamed', 'country_code' => 'NG', 'currency_code' => 'NGN', 'timezone' => 'Africa/Lagos'])->assertOk()->assertJsonPath('data.slug', $org->slug);
         Sanctum::actingAs($other);
@@ -56,7 +62,10 @@ class OrganizationLifecycleTest extends TestCase
         $org = Organization::factory()->create();
         OrganizationMembership::factory()->for($user)->for($org)->suspended()->create();
         Sanctum::actingAs($user);
-        $this->getJson('/api/v1/organizations')->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/organizations')->assertOk()
+            ->assertJsonStructure(['data', 'meta', 'links'])
+            ->assertJsonCount(0, 'data')
+            ->assertJsonPath('meta.total', 0);
         $this->getJson('/api/v1/organizations/'.$org->id)->assertForbidden();
     }
 }

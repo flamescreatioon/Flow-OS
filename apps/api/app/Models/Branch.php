@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BranchStatus;
+use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,7 @@ use Ramsey\Uuid\Uuid;
 class Branch extends Model
 {
     use HasFactory;
+    use Searchable;
 
     protected $table = 'branches';
 

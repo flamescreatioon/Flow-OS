@@ -22,7 +22,10 @@ class TenantMiddleware
             Log::notice('Tenant context was not supplied.', ['event' => 'tenant.context.missing']);
 
             return response()->json([
-                'message' => 'An organization context is required.',
+                'error' => [
+                    'code' => 'TENANT_REQUIRED',
+                    'message' => 'An organization context is required.',
+                ],
             ], Response::HTTP_BAD_REQUEST);
         }
 
@@ -31,7 +34,10 @@ class TenantMiddleware
             Log::notice('Tenant access denied for an unauthenticated request.', ['event' => 'tenant.access.denied']);
 
             return response()->json([
-                'message' => 'Unauthenticated.',
+                'error' => [
+                    'code' => 'UNAUTHENTICATED',
+                    'message' => 'Unauthenticated.',
+                ],
             ], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -39,7 +45,10 @@ class TenantMiddleware
             Log::notice('Tenant access denied for an inactive organization.', ['event' => 'tenant.access.denied']);
 
             return response()->json([
-                'message' => 'This organization is not active.',
+                'error' => [
+                    'code' => 'TENANT_ACCESS_DENIED',
+                    'message' => 'This organization is not active.',
+                ],
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -51,7 +60,10 @@ class TenantMiddleware
             Log::notice('Tenant access denied for inactive or missing membership.', ['event' => 'tenant.access.denied']);
 
             return response()->json([
-                'message' => 'You are not authorized for this organization.',
+                'error' => [
+                    'code' => 'TENANT_ACCESS_DENIED',
+                    'message' => 'You are not authorized for this organization.',
+                ],
             ], Response::HTTP_FORBIDDEN);
         }
 

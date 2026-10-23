@@ -7,15 +7,18 @@ use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithRbac;
 use Tests\TestCase;
 
 class BranchShowTest extends TestCase
 {
+    use WithRbac;
+
     public function test_valid_nested_resource_works(): void
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationMember($organization, $user);
         $branch = Branch::factory()->for($organization)->create(['name' => 'Test Branch']);
         Sanctum::actingAs($user);
 
@@ -33,8 +36,8 @@ class BranchShowTest extends TestCase
         $user = User::factory()->create();
         $organizationA = Organization::factory()->create();
         $organizationB = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationA)->active()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationB)->active()->create();
+        $this->createOrganizationMember($organizationA, $user);
+        $this->createOrganizationMember($organizationB, $user);
         $branch = Branch::factory()->for($organizationB)->create();
         Sanctum::actingAs($user);
 
@@ -77,7 +80,7 @@ class BranchShowTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationMember($organization, $user);
         $branch = Branch::factory()->for($organization)->create([
             'name' => 'Full Branch',
             'code' => 'FULL',

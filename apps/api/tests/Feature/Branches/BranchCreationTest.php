@@ -7,15 +7,18 @@ use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithRbac;
 use Tests\TestCase;
 
 class BranchCreationTest extends TestCase
 {
+    use WithRbac;
+
     public function test_active_member_can_create_branch(): void
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
@@ -87,7 +90,7 @@ class BranchCreationTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->suspended()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
@@ -102,7 +105,7 @@ class BranchCreationTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->closed()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Sanctum::actingAs($user);
 
         $this->withHeaders(['X-Organization-ID' => $organization->id])
@@ -117,7 +120,7 @@ class BranchCreationTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
@@ -134,7 +137,7 @@ class BranchCreationTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
@@ -152,7 +155,7 @@ class BranchCreationTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
@@ -170,7 +173,7 @@ class BranchCreationTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
@@ -190,7 +193,7 @@ class BranchCreationTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
@@ -207,7 +210,7 @@ class BranchCreationTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Branch::factory()->for($organization)->create(['code' => 'LAGOS']);
         Sanctum::actingAs($user);
 
@@ -224,8 +227,8 @@ class BranchCreationTest extends TestCase
         $user = User::factory()->create();
         $organizationA = Organization::factory()->create();
         $organizationB = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationA)->active()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationB)->active()->create();
+        $this->createOrganizationAdmin($organizationA, $user);
+        $this->createOrganizationAdmin($organizationB, $user);
         Branch::factory()->for($organizationA)->create(['code' => 'MAIN']);
         Sanctum::actingAs($user);
 

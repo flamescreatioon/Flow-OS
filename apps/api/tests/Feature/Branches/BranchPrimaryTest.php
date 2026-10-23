@@ -5,18 +5,20 @@ namespace Tests\Feature\Branches;
 use App\Enums\BranchStatus;
 use App\Models\Branch;
 use App\Models\Organization;
-use App\Models\OrganizationMembership;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithRbac;
 use Tests\TestCase;
 
 class BranchPrimaryTest extends TestCase
 {
+    use WithRbac;
+
     public function test_first_branch_primary(): void
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Sanctum::actingAs($user);
 
         $response = $this->withHeaders(['X-Organization-ID' => $organization->id])
@@ -33,7 +35,7 @@ class BranchPrimaryTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         Branch::factory()->for($organization)->create(['code' => 'FIRST', 'is_primary' => true]);
         Sanctum::actingAs($user);
 
@@ -55,7 +57,7 @@ class BranchPrimaryTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $first = Branch::factory()->for($organization)->create(['code' => 'FIRST', 'is_primary' => true]);
         $second = Branch::factory()->for($organization)->create(['code' => 'SECOND', 'is_primary' => false]);
         Sanctum::actingAs($user);
@@ -77,7 +79,7 @@ class BranchPrimaryTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $first = Branch::factory()->for($organization)->create(['code' => 'FIRST', 'is_primary' => true]);
         $second = Branch::factory()->for($organization)->create(['code' => 'SECOND', 'is_primary' => false]);
         Sanctum::actingAs($user);
@@ -94,7 +96,7 @@ class BranchPrimaryTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $first = Branch::factory()->for($organization)->create(['code' => 'FIRST', 'is_primary' => true]);
         $second = Branch::factory()->for($organization)->create(['code' => 'SECOND', 'is_primary' => false]);
         $third = Branch::factory()->for($organization)->create(['code' => 'THIRD', 'is_primary' => false]);
@@ -116,7 +118,7 @@ class BranchPrimaryTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $branch = Branch::factory()->for($organization)->create(['code' => 'INACTIVE', 'status' => BranchStatus::Inactive, 'is_primary' => false]);
         Sanctum::actingAs($user);
 
@@ -131,7 +133,7 @@ class BranchPrimaryTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $branch = Branch::factory()->for($organization)->create(['code' => 'CLOSED', 'status' => BranchStatus::Closed, 'is_primary' => false]);
         Sanctum::actingAs($user);
 
@@ -147,8 +149,8 @@ class BranchPrimaryTest extends TestCase
         $user = User::factory()->create();
         $organizationA = Organization::factory()->create();
         $organizationB = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationA)->active()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationB)->active()->create();
+        $this->createOrganizationAdmin($organizationA, $user);
+        $this->createOrganizationAdmin($organizationB, $user);
         $branch = Branch::factory()->for($organizationB)->create(['code' => 'OTHER', 'is_primary' => false]);
         Sanctum::actingAs($user);
 
@@ -162,7 +164,7 @@ class BranchPrimaryTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationAdmin($organization, $user);
         $branch = Branch::factory()->for($organization)->create(['code' => 'PRIMARY', 'is_primary' => true]);
         Sanctum::actingAs($user);
 
