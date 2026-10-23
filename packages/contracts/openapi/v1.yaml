@@ -5,18 +5,27 @@ info:
   description: |
     flowOS Business Operating System API
 
-    **Implementation status:** `GET /health`, Organization lifecycle, and Branch management are implemented in this repository.
-    Other paths retained in this v1 file are planned contracts and must not be
-    treated as deployed endpoints.
+    **Implementation status:** `GET /health`, Authentication (Sanctum session + personal access tokens,
+    registration, password reset, email verification), Organization lifecycle, Branch management,
+    Organization invitations/memberships, Organization-scoped RBAC, Devices, and Audit events are
+    implemented in this repository. This contract describes deployed endpoints only: organization
+    deletion and platform user administration are not part of the API and are not described here.
 
     ## Authentication
 
-    Planned authentication uses Laravel Sanctum for token-based authentication.
+    Implemented authentication uses Laravel Sanctum in two modes:
+
+    - Web sessions: `POST /auth/login` (cookie session), `POST /auth/logout`, `POST /auth/logout-all`.
+    - API tokens: `POST /auth/token` returns a Bearer personal access token for mobile/desktop clients.
 
     Include the token in the Authorization header:
     ```
     Authorization: Bearer {token}
     ```
+
+    Tenant routes additionally require `auth:sanctum` plus an active platform user
+    (`active-user`). Email verification status is available via `GET /auth/me`;
+    tenant write operations require a verified email and return `EMAIL_NOT_VERIFIED` otherwise.
 
     ## Multi-tenancy
 
@@ -79,6 +88,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
     post:
       summary: Create an organization and bootstrap the creator membership
@@ -87,6 +98,8 @@ paths:
         - Organizations
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -96,6 +109,11 @@ paths:
       responses:
         '201':
           description: Organization created
+          headers:
+            Idempotent-Replayed:
+              description: '`true` when the response was replayed from a stored idempotency record.'
+              schema:
+                type: boolean
           content:
             application/json:
               schema:
@@ -104,10 +122,16 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/EmailNotVerified'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
-  /organizations/{id}:
+  /organizations/{organization}:
     get:
       summary: Get organization by ID
       operationId: getOrganization
@@ -116,7 +140,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
       responses:
         '200':
           description: Organization details
@@ -130,6 +154,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
     patch:
       summary: Update organization
@@ -139,7 +165,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/NestedOrganizationId'
       requestBody:
         required: true
         content:
@@ -158,30 +184,13 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/EmailNotVerified'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
-    delete:
-      summary: Delete organization
-      operationId: deleteOrganization
-      tags:
-        - Organizations
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrganizationId'
-      responses:
-        '204':
-          description: Organization deleted
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /organizations/{organization}/suspend:
     post:
@@ -196,8 +205,10 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '200': { description: Organization suspended }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/EmailNotVerified' }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /organizations/{organization}/activate:
     post:
@@ -212,8 +223,10 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '200': { description: Organization activated }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/EmailNotVerified' }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /organizations/{organization}/close:
     post:
@@ -228,8 +241,10 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '200': { description: Organization closed }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/EmailNotVerified' }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /organizations/{organization}/branches:
     get:
@@ -239,6 +254,7 @@ paths:
         - Branches
       security:
         - bearerAuth: []
+          OrganizationSelector: []
       parameters:
         - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/Page'
@@ -250,10 +266,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedBranchesResponse'
+        '400':
+          $ref: '#/components/responses/TenantRequired'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TenantAccessDenied'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -264,6 +282,7 @@ paths:
         - Branches
       security:
         - bearerAuth: []
+          OrganizationSelector: []
       parameters:
         - $ref: '#/components/parameters/NestedOrganizationId'
       requestBody:
@@ -280,11 +299,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/BranchResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/TenantRequired'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TenantAccessDenied'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -298,6 +317,7 @@ paths:
         - Branches
       security:
         - bearerAuth: []
+          OrganizationSelector: []
       parameters:
         - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
@@ -308,10 +328,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BranchResponse'
+        '400':
+          $ref: '#/components/responses/TenantRequired'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TenantAccessDenied'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -322,6 +344,7 @@ paths:
         - Branches
       security:
         - bearerAuth: []
+          OrganizationSelector: []
       parameters:
         - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
@@ -339,11 +362,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/BranchResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/TenantRequired'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TenantAccessDenied'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -357,6 +380,7 @@ paths:
         - Branches
       security:
         - bearerAuth: []
+          OrganizationSelector: []
       parameters:
         - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
@@ -367,10 +391,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BranchResponse'
+        '400':
+          $ref: '#/components/responses/TenantRequired'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TenantAccessDenied'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -384,6 +410,7 @@ paths:
         - Branches
       security:
         - bearerAuth: []
+          OrganizationSelector: []
       parameters:
         - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
@@ -394,10 +421,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BranchResponse'
+        '400':
+          $ref: '#/components/responses/TenantRequired'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TenantAccessDenied'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -411,6 +440,7 @@ paths:
         - Branches
       security:
         - bearerAuth: []
+          OrganizationSelector: []
       parameters:
         - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
@@ -421,10 +451,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BranchResponse'
+        '400':
+          $ref: '#/components/responses/TenantRequired'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TenantAccessDenied'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -438,6 +470,7 @@ paths:
         - Branches
       security:
         - bearerAuth: []
+          OrganizationSelector: []
       parameters:
         - $ref: '#/components/parameters/NestedOrganizationId'
         - $ref: '#/components/parameters/BranchId'
@@ -448,132 +481,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BranchResponse'
+        '400':
+          $ref: '#/components/responses/TenantRequired'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TenantAccessDenied'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
-
-  /users:
-    get:
-      summary: List users for current organization
-      operationId: listUsers
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/PerPage'
-      responses:
-        '200':
-          description: List of users
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedUsersResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-    post:
-      summary: Create a new user
-      operationId: createUser
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateUserRequest'
-      responses:
-        '201':
-          description: User created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-  /users/{id}:
-    get:
-      summary: Get user by ID
-      operationId: getUser
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-      responses:
-        '200':
-          description: User details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-    patch:
-      summary: Update user
-      operationId: updateUser
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateUserRequest'
-      responses:
-        '200':
-          description: User updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-    delete:
-      summary: Delete user
-      operationId: deleteUser
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-      responses:
-        '204':
-          description: User deleted
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
   /auth/login:
     post:
@@ -594,10 +511,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthenticatedUserResponse'
+        '202':
+          description: |
+            The password was accepted but the account has multi-factor authentication enrolled, so
+            no session was created. Redeem the returned challenge with `POST /auth/mfa/verify`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaChallengeResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /auth/logout:
     post:
@@ -612,6 +539,8 @@ paths:
           description: Logged out successfully
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /auth/me:
     get:
@@ -630,6 +559,8 @@ paths:
                 $ref: '#/components/schemas/AuthenticatedUserResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /auth/register:
     post:
@@ -648,6 +579,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/AuthenticatedUserResponse' }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /auth/token:
     post:
@@ -664,9 +596,19 @@ paths:
           description: Token created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/TokenResponse' }
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '202':
+          description: |
+            The password was accepted but the account has multi-factor authentication enrolled, so
+            no token was created. Redeem the returned challenge with `POST /auth/mfa/verify`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaChallengeResponse'
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /auth/logout-all:
     post:
@@ -677,6 +619,7 @@ paths:
       responses:
         '204': { description: Authentication state cleared }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /auth/forgot-password:
     post:
@@ -691,6 +634,7 @@ paths:
       responses:
         '202': { description: Request accepted without disclosing account existence }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /auth/reset-password:
     post:
@@ -716,6 +660,7 @@ paths:
         '200': { description: Already verified }
         '202': { description: Verification link sent }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /auth/email/verify/{id}/{hash}:
     get:
@@ -738,6 +683,261 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/AuthenticatedUserResponse' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/mfa/enroll:
+    post:
+      summary: Start multi-factor enrolment and return the authenticator secret
+      operationId: enrollMfa
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: |
+            A pending enrolment was created. The secret and its otpauth URI are returned once and
+            are discarded if the enrolment is not confirmed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MfaEnrollmentResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/EmailNotVerified' }
+        '409': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/mfa/confirm:
+    post:
+      summary: Confirm multi-factor enrolment and return the recovery codes
+      operationId: confirmMfa
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MfaCodeRequest' } } } }
+      responses:
+        '200':
+          description: The account is enrolled. The recovery codes are returned exactly once.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MfaRecoveryCodesResponse' }
+        '401': { $ref: '#/components/responses/MfaCodeInvalid' }
+        '403': { $ref: '#/components/responses/EmailNotVerified' }
+        '409': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/mfa/verify:
+    post:
+      summary: Redeem a multi-factor challenge for the credential it was issued for
+      operationId: verifyMfa
+      tags: [Authentication]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MfaVerifyRequest' } } } }
+      responses:
+        '200':
+          description: The session was created for a session challenge.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthenticatedUserResponse' }
+        '201':
+          description: The personal access token was created for a token challenge.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '401': { $ref: '#/components/responses/MfaChallengeInvalid' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/MfaLocked' }
+  /auth/mfa/disable:
+    post:
+      summary: Remove multi-factor authentication from the authenticated account
+      operationId: disableMfa
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MfaCodeRequest' } } } }
+      responses:
+        '204': { description: Multi-factor authentication removed }
+        '401': { $ref: '#/components/responses/MfaCodeInvalid' }
+        '403': { $ref: '#/components/responses/EmailNotVerified' }
+        '409': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /organizations/{organization}/invitations:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listOrganizationInvitations
+      summary: List organization invitations
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Invitations, content: { application/json: { schema: { $ref: '#/components/schemas/OrganizationInvitationCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createOrganizationInvitation
+      summary: Create an organization invitation
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateInvitationRequest' } } } }
+      responses:
+        '201':
+          description: Invitation created
+          headers:
+            Idempotent-Replayed:
+              description: '`true` when the response was replayed from a stored idempotency record.'
+              schema:
+                type: boolean
+          content: { application/json: { schema: { $ref: '#/components/schemas/OrganizationInvitationResponse' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/EmailNotVerified' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /organizations/{organization}/invitations/{invitation}/resend:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }, { $ref: '#/components/parameters/InvitationId' }]
+    post:
+      operationId: resendOrganizationInvitation
+      summary: Rotate and resend an invitation token
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Invitation resent, content: { application/json: { schema: { $ref: '#/components/schemas/InvitationLifecycleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/invitations/{invitation}/cancel:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }, { $ref: '#/components/parameters/InvitationId' }]
+    post:
+      operationId: cancelOrganizationInvitation
+      summary: Cancel an invitation
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Invitation cancelled, content: { application/json: { schema: { $ref: '#/components/schemas/InvitationLifecycleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /invitations/{token}:
+    parameters: [{ $ref: '#/components/parameters/InvitationToken' }]
+    get:
+      operationId: inspectInvitation
+      summary: Inspect an invitation using its raw token
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Safe invitation information, content: { application/json: { schema: { $ref: '#/components/schemas/InvitationInspectionResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /invitations/{token}/accept:
+    parameters: [{ $ref: '#/components/parameters/InvitationToken' }]
+    post:
+      operationId: acceptInvitation
+      summary: Accept an invitation as the matching authenticated user
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Invitation accepted, content: { application/json: { schema: { $ref: '#/components/schemas/InvitationLifecycleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /invitations/{token}/decline:
+    parameters: [{ $ref: '#/components/parameters/InvitationToken' }]
+    post:
+      operationId: declineInvitation
+      summary: Decline an invitation as the matching authenticated user
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Invitation declined, content: { application/json: { schema: { $ref: '#/components/schemas/InvitationLifecycleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/memberships:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listOrganizationMemberships
+      summary: List organization memberships
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Memberships, content: { application/json: { schema: { $ref: '#/components/schemas/OrganizationMembershipCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/memberships/{membership}:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }, { $ref: '#/components/parameters/MembershipId' }]
+    get:
+      operationId: getOrganizationMembership
+      summary: Get an organization membership
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Membership, content: { application/json: { schema: { $ref: '#/components/schemas/OrganizationMembershipResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/memberships/{membership}/suspend:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }, { $ref: '#/components/parameters/MembershipId' }]
+    post:
+      operationId: suspendOrganizationMembership
+      summary: Suspend an active membership
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Membership transitioned, content: { application/json: { schema: { $ref: '#/components/schemas/MembershipLifecycleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/memberships/{membership}/activate:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }, { $ref: '#/components/parameters/MembershipId' }]
+    post:
+      operationId: activateOrganizationMembership
+      summary: Activate a suspended membership
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Membership transitioned, content: { application/json: { schema: { $ref: '#/components/schemas/MembershipLifecycleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/memberships/{membership}/revoke:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }, { $ref: '#/components/parameters/MembershipId' }]
+    post:
+      operationId: revokeOrganizationMembership
+      summary: Revoke a membership
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Membership transitioned, content: { application/json: { schema: { $ref: '#/components/schemas/MembershipLifecycleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/permissions:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listOrganizationPermissions
+      summary: List the canonical permission catalogue
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Permissions, content: { application/json: { schema: { $ref: '#/components/schemas/PermissionCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/roles:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listOrganizationRoles
+      summary: List organization roles
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Roles, content: { application/json: { schema: { $ref: '#/components/schemas/RoleCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createOrganizationRole
+      summary: Create a custom organization role
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateRoleRequest' } } } }
+      responses: { '201': { description: Role, content: { application/json: { schema: { $ref: '#/components/schemas/RoleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/roles/{role}:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }, { $ref: '#/components/parameters/RoleId' }]
+    get:
+      operationId: getOrganizationRole
+      summary: Get an organization role
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Role, content: { application/json: { schema: { $ref: '#/components/schemas/RoleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    patch:
+      operationId: updateOrganizationRole
+      summary: Update a custom organization role
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateRoleRequest' } } } }
+      responses: { '200': { description: Role, content: { application/json: { schema: { $ref: '#/components/schemas/RoleResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    delete:
+      operationId: deleteOrganizationRole
+      summary: Delete an unassigned custom role
+      security: [{ bearerAuth: [] }]
+      responses: { '204': { description: Role deleted }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/memberships/{membership}/roles:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }, { $ref: '#/components/parameters/MembershipId' }]
+    put:
+      operationId: assignOrganizationMembershipRoles
+      summary: Replace a membership's assigned roles
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AssignRolesRequest' } } } }
+      responses: { '200': { description: Roles assigned, content: { application/json: { schema: { $ref: '#/components/schemas/RoleCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/me/permissions:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: getEffectiveOrganizationPermissions
+      summary: Get the caller's effective organization permissions
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Effective permissions, content: { application/json: { schema: { $ref: '#/components/schemas/EffectivePermissionsResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /devices:
+    get:
+      operationId: listDevices
+      summary: List the caller's registered devices
+      tags: [Devices]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Devices, content: { application/json: { schema: { $ref: '#/components/schemas/DeviceCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: registerDevice
+      summary: Register a user device
+      tags: [Devices]
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateDeviceRequest' } } } }
+      responses: { '201': { description: Device, content: { application/json: { schema: { $ref: '#/components/schemas/DeviceResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /devices/{device}/revoke:
+    parameters: [{ name: device, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      operationId: revokeDeviceByPath
+      summary: Revoke a user device
+      tags: [Devices]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Device revoked, content: { application/json: { schema: { $ref: '#/components/schemas/DeviceResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+  /organizations/{organization}/audit-events:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listAuditEvents
+      summary: List append-only audit events for an organization
+      tags: [Audit]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Audit events, content: { application/json: { schema: { $ref: '#/components/schemas/AuditEventCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
 
 components:
   securitySchemes:
@@ -750,7 +950,10 @@ components:
       type: apiKey
       in: header
       name: X-Organization-ID
-      description: Selects an organization for tenant-authenticated routes; the server verifies active membership.
+      description: |
+        Selects an organization for tenant-authenticated routes; the server verifies active
+        membership before the selection is used. A subdomain selector (for example
+        `myorg.flowos.local`) is an equivalent alternative to this header.
 
   parameters:
     Page:
@@ -772,15 +975,6 @@ components:
         maximum: 100
         default: 25
 
-    OrganizationId:
-      name: id
-      in: path
-      required: true
-      description: Organization UUID
-      schema:
-        type: string
-        format: uuid
-
     NestedOrganizationId:
       name: organization
       in: path
@@ -799,14 +993,41 @@ components:
         type: string
         format: uuid
 
-    UserId:
-      name: id
+    MembershipId:
+      name: membership
       in: path
       required: true
-      description: User UUID
+      schema: { type: string, format: uuid }
+
+    InvitationId:
+      name: invitation
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    InvitationToken:
+      name: token
+      in: path
+      required: true
+      schema: { type: string, minLength: 1 }
+
+    RoleId:
+      name: role
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: |
+        Makes this write replay-safe. Repeating the request with the same key and the same
+        payload returns the original response with `Idempotent-Replayed: true`. Reusing the key
+        with a different payload returns `409 IDEMPOTENCY_CONFLICT`.
       schema:
         type: string
-        format: uuid
+        maxLength: 100
 
   schemas:
     UUID:
@@ -1109,46 +1330,10 @@ components:
           type: string
           format: date-time
 
-    CreateUserRequest:
-      type: object
-      required:
-        - name
-        - email
-        - password
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-          minLength: 8
-
-    UpdateUserRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        email:
-          type: string
-          format: email
-        status:
-          $ref: '#/components/schemas/UserStatus'
-
     OrganizationMembership:
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        user_id:
           $ref: '#/components/schemas/UUID'
         status:
           $ref: '#/components/schemas/MembershipStatus'
@@ -1170,28 +1355,8 @@ components:
         updated_at:
           type: string
           format: date-time
-
-    UserResponse:
-      type: object
-      properties:
-        data:
+        user:
           $ref: '#/components/schemas/User'
-
-    PaginatedUsersResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        current_page:
-          type: integer
-        last_page:
-          type: integer
-        per_page:
-          type: integer
-        total:
-          type: integer
 
     AuthRegisterRequest:
       type: object
@@ -1253,6 +1418,60 @@ components:
         token_type: { type: string, enum: [Bearer] }
         user: { $ref: '#/components/schemas/User' }
 
+    MfaChallengeResponse:
+      type: object
+      required: [mfa_required, challenge, expires_at, methods]
+      properties:
+        mfa_required: { type: boolean, enum: [true] }
+        challenge:
+          type: string
+          description: Opaque single-use challenge that must be redeemed with a second factor.
+        expires_at: { type: string, format: date-time }
+        methods:
+          type: array
+          items: { type: string, enum: [totp, recovery_code] }
+
+    MfaEnrollmentResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            secret:
+              type: string
+              description: Base32 shared secret to register in an authenticator application.
+            otpauth_uri:
+              type: string
+              description: otpauth URI to open in an authenticator application.
+
+    MfaRecoveryCodesResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            recovery_codes:
+              type: array
+              description: Single-use recovery codes, returned exactly once.
+              items: { type: string }
+
+    MfaCodeRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          description: A time-based one-time password or a single-use recovery code.
+
+    MfaVerifyRequest:
+      type: object
+      required: [challenge, code]
+      properties:
+        challenge: { type: string }
+        code:
+          type: string
+          description: A time-based one-time password or a single-use recovery code.
+
     ValidationError:
       type: object
       properties:
@@ -1264,6 +1483,122 @@ components:
             type: array
             items:
               type: string
+
+    OrganizationMembershipResponse:
+      type: object
+      properties: { data: { $ref: '#/components/schemas/OrganizationMembership' } }
+    OrganizationMembershipCollection:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/OrganizationMembership' } } }
+    OrganizationInvitation:
+      type: object
+      required: [id, email, state, expires_at]
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        email: { type: string, format: email }
+        state: { type: string, enum: [pending, accepted, declined, cancelled, expired] }
+        expires_at: { type: string, format: date-time }
+        accepted_at: { type: string, format: date-time, nullable: true }
+        declined_at: { type: string, format: date-time, nullable: true }
+        cancelled_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        invited_by: { $ref: '#/components/schemas/User' }
+    OrganizationInvitationResponse:
+      type: object
+      properties: { data: { $ref: '#/components/schemas/OrganizationInvitation' } }
+    OrganizationInvitationCollection:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/OrganizationInvitation' } } }
+    CreateInvitationRequest:
+      type: object
+      required: [email]
+      properties: { email: { type: string, format: email } }
+    InvitationInspectionResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            organization_name: { type: string }
+            email: { type: string, format: email }
+            expires_at: { type: string, format: date-time }
+            state: { type: string, enum: [pending, accepted, declined, cancelled, expired] }
+    InvitationLifecycleResponse:
+      type: object
+      properties: { data: { $ref: '#/components/schemas/OrganizationInvitation' } }
+    MembershipLifecycleResponse:
+      type: object
+      properties: { data: { $ref: '#/components/schemas/OrganizationMembership' } }
+    Permission:
+      type: object
+      properties: { id: { $ref: '#/components/schemas/UUID' }, key: { type: string }, description: { type: string, nullable: true } }
+    PermissionCollection:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Permission' } } }
+    Role:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string, nullable: true }
+        is_system: { type: boolean }
+        permissions: { type: array, items: { $ref: '#/components/schemas/Permission' } }
+    RoleResponse:
+      type: object
+      properties: { data: { $ref: '#/components/schemas/Role' } }
+    RoleCollection:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Role' } } }
+    CreateRoleRequest:
+      type: object
+      required: [name]
+      properties: { name: { type: string }, description: { type: string }, permission_ids: { type: array, items: { $ref: '#/components/schemas/UUID' } } }
+    UpdateRoleRequest:
+      type: object
+      properties: { name: { type: string }, description: { type: string }, permission_ids: { type: array, items: { $ref: '#/components/schemas/UUID' } } }
+    AssignRolesRequest:
+      type: object
+      required: [role_ids]
+      properties: { role_ids: { type: array, items: { $ref: '#/components/schemas/UUID' } } }
+    EffectivePermissionsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties: { roles: { type: array, items: { $ref: '#/components/schemas/Role' } }, permissions: { type: array, items: { type: string } } }
+    Device:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        platform: { type: string }
+        device_name: { type: string, nullable: true }
+        last_seen_at: { type: string, format: date-time, nullable: true }
+        revoked_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+    DeviceResponse:
+      type: object
+      properties: { data: { $ref: '#/components/schemas/Device' } }
+    DeviceCollection:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Device' } } }
+    CreateDeviceRequest:
+      type: object
+      required: [platform]
+      properties: { platform: { type: string }, device_name: { type: string } }
+    AuditEvent:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        event_type: { type: string }
+        entity_type: { type: string }
+        entity_id: { type: string, format: uuid, nullable: true }
+        actor_user_id: { type: string, format: uuid, nullable: true }
+        metadata: { type: object }
+        created_at: { type: string, format: date-time }
+    AuditEventCollection:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/AuditEvent' } } }
 
   responses:
     BadRequest:
@@ -1302,6 +1637,123 @@ components:
             properties:
               message:
                 type: string
+
+    TenantRequired:
+      description: Organization context is required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: TENANT_REQUIRED }
+                  message: { type: string }
+
+    TenantAccessDenied:
+      description: |
+        The request was refused. `error.code` is `TENANT_ACCESS_DENIED` when the selected
+        organization is not authorized, `EMAIL_NOT_VERIFIED` when the caller's email address is not
+        verified, or `FORBIDDEN` when the caller lacks the required permission.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: TENANT_ACCESS_DENIED }
+                  message: { type: string }
+
+    EmailNotVerified:
+      description: |
+        The write was refused. `error.code` is `EMAIL_NOT_VERIFIED` when the caller's email address
+        is not verified, or `FORBIDDEN` when the caller lacks the required permission.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: EMAIL_NOT_VERIFIED }
+                  message: { type: string }
+
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: RATE_LIMITED }
+                  message: { type: string }
+
+    IdempotencyConflict:
+      description: |
+        Idempotency key reused with a different payload, or reused while an earlier request with
+        the same key is still being processed.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: IDEMPOTENCY_CONFLICT }
+                  message: { type: string }
+
+    MfaCodeInvalid:
+      description: |
+        The second factor is not valid. `error.code` is `MFA_CODE_INVALID` when the code does not
+        match, or `MFA_NOT_ENROLLED` when the account has no multi-factor enrolment.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: MFA_CODE_INVALID }
+                  message: { type: string }
+
+    MfaChallengeInvalid:
+      description: |
+        The multi-factor challenge is unknown, expired, or has already been redeemed.
+        `error.code` is `MFA_CHALLENGE_INVALID`.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: MFA_CHALLENGE_INVALID }
+                  message: { type: string }
+
+    MfaLocked:
+      description: |
+        The multi-factor challenge has exhausted its verification attempts and can no longer be
+        redeemed. `error.code` is `MFA_LOCKED`.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: MFA_LOCKED }
+                  message: { type: string }
 
     ValidationError:
       description: Validation error

@@ -4,7 +4,8 @@ The Next.js frontend for flowOS — an offline-capable business operating system
 
 ## Technology Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 15 (App Router)
+- **Runtime**: React 19
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS
 - **Testing**: Jest + React Testing Library

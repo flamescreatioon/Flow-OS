@@ -16,19 +16,18 @@ BEGIN
     ts := (EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint;
 
     -- Build UUID v7: 48-bit timestamp + 74 random bits + version/variant
+    -- int8send returns the 8-byte big-endian representation; bytes 3-8 are
+    -- the low 48 bits of the millisecond timestamp. PostgreSQL has no
+    -- direct bigint-to-bytea cast, so per-byte casts cannot be used.
     uuid_bytes :=
-        (ts >> 40 & 0xFF)::bytea ||
-        (ts >> 32 & 0xFF)::bytea ||
-        (ts >> 24 & 0xFF)::bytea ||
-        (ts >> 16 & 0xFF)::bytea ||
-        (ts >> 8 & 0xFF)::bytea ||
-        (ts & 0xFF)::bytea ||
+        substring(int8send(ts) from 3 for 6) ||
         gen_random_bytes(10);
 
     -- Set version (7) and variant (RFC 4122)
     uuid_bytes := set_byte(uuid_bytes, 6, (get_byte(uuid_bytes, 6) & 0x0F) | 0x70);
     uuid_bytes := set_byte(uuid_bytes, 8, (get_byte(uuid_bytes, 8) & 0x3F) | 0x80);
 
-    RETURN uuid_bytes::uuid;
+    -- bytea cannot cast to uuid directly; route through hex text
+    RETURN encode(uuid_bytes, 'hex')::uuid;
 END;
 $$;

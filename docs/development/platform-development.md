@@ -6,7 +6,7 @@ This guide details day-to-day development across the four client and server appl
 
 ## 1. Web Application (`apps/web`)
 
-The flowOS web frontend is built with **Next.js 14** (App Router), React 18, and TypeScript.
+The flowOS web frontend is built with **Next.js 15** (App Router), React 19, and TypeScript.
 
 ### Setup & Local Execution
 ```bash
@@ -50,13 +50,13 @@ Web authentication uses **Laravel Sanctum SPA stateful cookie sessions**. The we
 > Authentication UI screens and API login flows are scheduled for Sprint 1. Do not assume live authentication endpoints exist during Sprint 0.
 
 ### Known Security Blocker
-- **Next.js Version Vulnerability**: The current Next.js version (`14.2.0` / `14.2.35`) has known security advisories. Production deployment requires upgrading to `>=15.5.24`. See [Dependency Security](../security/dependency-security.md).
+- **Next.js Version Line**: Next.js 15.5.28 with React 19 is a supported patched line. `npm audit --omit=dev` reports no advisories for the production dependency tree. See [Dependency Security](../security/dependency-security.md).
 
 ---
 
 ## 2. Backend API (`apps/api`)
 
-The flowOS backend API is built with **Laravel 10**, PHP 8.2+, and PostgreSQL 16.
+The flowOS backend API is built with **Laravel 12**, PHP 8.2+, and PostgreSQL 16.
 
 ### Setup & Local Execution
 ```bash
@@ -106,7 +106,7 @@ php artisan test
 *Note on Testing Database*: Standard API unit/feature tests run in an in-memory SQLite database (`:memory:`) configured in `phpunit.xml` for maximum speed. Full integration against PostgreSQL is executed during CI smoke checks.
 
 ### Known Security Blocker
-- **Laravel Framework Line**: Laravel 10 reaches end-of-life and requires a controlled migration to Laravel 12+ before production release.
+- **Laravel Framework Line**: Laravel 12.70.0 is a supported patched line, and `composer audit` reports no advisories.
 
 ---
 

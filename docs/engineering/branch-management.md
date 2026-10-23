@@ -33,11 +33,7 @@ All branch routes are nested under `/api/v1/organizations/{organization}/`:
 
 ## Authorization
 
-Until Sprint 1.6 RBAC exists:
-- **Read** requires active membership in the organization
-- **Branch mutation** (create, update, lifecycle, make-primary) may be performed by active members
-
-This broad active-member mutation authorization is **temporary** and will be replaced in Sprint 1.6 with proper role-based access control.
+Sprint 1.6 RBAC governs branch read and mutation permissions; active membership alone is not authority.
 
 The organization must also be active for normal tenant branch operations.
 

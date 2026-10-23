@@ -31,5 +31,10 @@ Current architecture is described in the [architecture entrypoint](../architectu
 | 0025 | Core Platform Contract and Schema Hardening | ACCEPTED | Standardizes platform identity, lifecycle, hierarchy constraints, and tenant context. |
 | 0026 | Platform Authentication Foundation | ACCEPTED | Sanctum sessions for web and tokens for mobile/desktop, separate from tenant authorization. |
 | 0027 | Organization Lifecycle | ACCEPTED | Transactional bootstrap membership and explicit organization lifecycle. |
+| 0028 | Branch Management | ACCEPTED | Branch profile and lifecycle under organization ownership. |
+| 0029 | Membership and Invitation Lifecycle | ACCEPTED | Hashed expiring invitations and safe membership lifecycle invariants. |
+| 0030 | Organization-Scoped RBAC | ACCEPTED | Organization roles and canonical permission authorization. |
+| 0031 | Framework Version Upgrade for Production Support | ACCEPTED | Laravel 10 to 12 and Next.js 14 to 15 for upstream security support. |
+| 0032 | Multi-Factor Authentication with Authenticator Applications | ACCEPTED | TOTP second factor enforced at credential issuance, with recovery codes. |
 
 Use [the ADR template](template.md) for future significant decisions. An ADR is required for changes to tenancy, authentication, primary source of truth, offline conflict model, financial representation, architecture style, major infrastructure, or deployment architecture. Routine fixes, tests, refactors, and ordinary endpoints under existing boundaries do not require one.

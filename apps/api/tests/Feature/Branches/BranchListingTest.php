@@ -8,17 +8,20 @@ use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithRbac;
 use Tests\TestCase;
 
 class BranchListingTest extends TestCase
 {
+    use WithRbac;
+
     public function test_only_requested_organizations_branches_returned(): void
     {
         $user = User::factory()->create();
         $organizationA = Organization::factory()->create();
         $organizationB = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationA)->active()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationB)->active()->create();
+        $this->createOrganizationMember($organizationA, $user);
+        $this->createOrganizationMember($organizationB, $user);
 
         Branch::factory()->for($organizationA)->create(['name' => 'Org A Branch 1']);
         Branch::factory()->for($organizationA)->create(['name' => 'Org A Branch 2']);
@@ -29,7 +32,9 @@ class BranchListingTest extends TestCase
             ->getJson('/api/v1/organizations/'.$organizationA->id.'/branches');
 
         $response->assertOk()
+            ->assertJsonStructure(['data', 'meta', 'links'])
             ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.total', 2)
             ->assertJsonPath('data.0.name', 'Org A Branch 1')
             ->assertJsonPath('data.1.name', 'Org A Branch 2');
     }
@@ -38,7 +43,7 @@ class BranchListingTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationMember($organization, $user);
 
         Branch::factory()->for($organization)->create(['name' => 'Active Branch', 'status' => BranchStatus::Active]);
         Branch::factory()->for($organization)->create(['name' => 'Inactive Branch', 'status' => BranchStatus::Inactive]);
@@ -49,7 +54,9 @@ class BranchListingTest extends TestCase
             ->getJson('/api/v1/organizations/'.$organization->id.'/branches');
 
         $response->assertOk()
-            ->assertJsonCount(3, 'data');
+            ->assertJsonStructure(['data', 'meta', 'links'])
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('meta.total', 3);
         $statuses = collect($response->json('data'))->pluck('status')->toArray();
         $this->assertContains('active', $statuses);
         $this->assertContains('inactive', $statuses);
@@ -61,7 +68,7 @@ class BranchListingTest extends TestCase
         $user = User::factory()->create();
         $organizationA = Organization::factory()->create();
         $organizationB = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organizationA)->active()->create();
+        $this->createOrganizationMember($organizationA, $user);
 
         Branch::factory()->for($organizationB)->create(['name' => 'Org B Branch']);
         Sanctum::actingAs($user);
@@ -70,7 +77,9 @@ class BranchListingTest extends TestCase
             ->getJson('/api/v1/organizations/'.$organizationA->id.'/branches');
 
         $response->assertOk()
-            ->assertJsonCount(0, 'data');
+            ->assertJsonStructure(['data', 'meta', 'links'])
+            ->assertJsonCount(0, 'data')
+            ->assertJsonPath('meta.total', 0);
     }
 
     public function test_non_member_denied_listing(): void
@@ -104,7 +113,7 @@ class BranchListingTest extends TestCase
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
-        OrganizationMembership::factory()->for($user)->for($organization)->active()->create();
+        $this->createOrganizationMember($organization, $user);
 
         Branch::factory()->for($organization)->create(['name' => 'Secondary', 'is_primary' => false]);
         Branch::factory()->for($organization)->create(['name' => 'Primary Branch', 'is_primary' => true]);

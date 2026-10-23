@@ -13,7 +13,7 @@
 | Authorization | PARTIAL | Active membership enforced; permission model is future work. |
 | Offline sync | ARCHITECTED | Detailed target exists; mobile SyncEngine is a non-production prototype. |
 | Contracts | PARTIAL | OpenAPI v1 is canonical; implemented surface is small. |
-| Security | PARTIAL | Foundation present; Laravel/Next upgrades are production blockers. |
+| Security | PARTIAL | Foundation present; the Laravel/Next framework upgrades that were production blockers are resolved. |
 | Observability | PARTIAL | Request IDs/redaction/health foundation present; metrics/audit/readiness future. |
 | CI | IMPLEMENTED | Cross-platform checks; Flutter analyzer is advisory hosted debt (186 findings). |
 | Deployment | ARCHITECTED | Local Compose is implemented; production topology/provider unfinalized. |
@@ -24,8 +24,7 @@
 - Flutter `SyncEngine` generic CRUD/timestamp/UUIDv4 prototype is not approved sync architecture.
 - Desktop sync and local persistence are placeholders.
 - Device lifecycle, durable audit events, readiness, metrics, and correlation IDs are unimplemented.
-- Laravel 10 and Next 14 security migrations are pre-production blockers.
-
+- The Laravel 10 and Next 14 security migrations that were pre-production blockers are resolved; the API now runs on Laravel 12 and the web client on Next.js 15.
 ## ADR follow-up for Sprint 0.25
 
 ADR 0008/0010 historical JWT/RLS alternatives and duplicate tenancy-era material need reconciliation against accepted membership/Sanctum/shared-schema direction. This audit records the issue but does not perform the ADR review.

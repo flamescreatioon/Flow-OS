@@ -4,6 +4,8 @@ namespace App\Http;
 
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\EnsureActiveUser;
+use App\Http\Middleware\EnsureVerifiedEmailForWrites;
+use App\Http\Middleware\IdempotencyKeyMiddleware;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\RequestContextMiddleware;
@@ -94,5 +96,7 @@ class Kernel extends HttpKernel
         'verified' => EnsureEmailIsVerified::class,
         'tenant' => TenantMiddleware::class,
         'active-user' => EnsureActiveUser::class,
+        'verified-writes' => EnsureVerifiedEmailForWrites::class,
+        'idempotency' => IdempotencyKeyMiddleware::class,
     ];
 }

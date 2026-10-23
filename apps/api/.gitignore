@@ -23,6 +23,9 @@
 !.env.example
 .env.backup
 .phpunit.result.cache
+*.sqlite
+*.sqlite-journal
+*.db
 Homestead.yaml
 Homestead.json
 auth.json

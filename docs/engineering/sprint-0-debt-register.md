@@ -10,8 +10,8 @@ The following items are explicit blockers that must be fully resolved before any
 
 | Issue / Blocker | Current State (Sprint 0) | Required Production Resolution | Owning Subsystem |
 |-----------------|--------------------------|--------------------------------|------------------|
-| **Laravel Security Advisories** | Laravel 10.50.3 in use; 4 security advisories reported by `composer audit` | Controlled upgrade to supported Laravel 12+ line | `apps/api` |
-| **Next.js Security Advisories** | Next.js 14.2.35 in use; 2 advisories (1 high, 1 critical) reported by `npm audit` | Controlled upgrade to Next.js `>=15.5.24` | `apps/web` |
+| **Laravel Security Advisories** | Resolved: Laravel 12.70.0 in use; `composer audit` reports no advisories | None outstanding | `apps/api` |
+| **Next.js Security Advisories** | Resolved: Next.js 15.5.28 in use; `npm audit --omit=dev` reports no advisories | None outstanding for production dependencies | `apps/web` |
 | **Production Headers & CORS** | Local development origins configured (`localhost:3000`) | Explicit HTTPS production domains, HSTS, CSP nonces, secure cookie flags | `apps/api`, `apps/web` |
 | **Secret Management** | Local development uses `.env` files | Integration with HashiCorp Vault, AWS Secrets Manager, or managed cloud secret store | Infrastructure / DevOps |
 | **Production Infrastructure Topology** | Docker Compose used solely for local workstation infrastructure | Production VPS/container cluster, managed PostgreSQL 16 with automated backups and replicas, TLS termination | Infrastructure / Cloud |
@@ -41,7 +41,7 @@ The following capabilities are architected and configured in repository files, b
 
 | Component | Repository Status | Current Operational Status | Trigger |
 |-----------|-------------------|----------------------------|---------|
-| **Remote GitHub Repository** | `.github/` workflows configured | `NOT CONFIGURED` (No remote attached) | Upstream repository creation and push |
+| **Remote GitHub Repository** | `.github/` workflows configured | `CONFIGURED` (origin attached; Dependabot active) | N/A |
 | **Hosted CI Pipeline** | `.github/workflows/ci.yml` complete | `UNAVAILABLE` locally | Attachment to GitHub Actions |
 | **CodeQL Security Scanning** | `.github/workflows/codeql.yml` configured | `UNAVAILABLE` locally | Attachment to GitHub Actions |
 | **Dependabot Version Updates** | `.github/dependabot.yml` configured | `UNAVAILABLE` locally | Attachment to GitHub |

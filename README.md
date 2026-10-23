@@ -1,6 +1,6 @@
 # flowOS
 
-flowOS is an offline-capable, multi-tenant business operating system for Nigerian businesses. It is a modular monolith foundation; Sprint 1 business modules have not started.
+flowOS is an offline-capable, multi-tenant business operating system for Nigerian businesses. It is a modular monolith foundation; the platform slice (authentication, organizations, memberships, RBAC, MFA) and the catalogue & inventory foundation are implemented, with further business modules to follow.
 
 ## Architecture
 
@@ -10,14 +10,14 @@ Web, mobile, and desktop clients use the Laravel API. PostgreSQL is the authorit
 
 | Layer | Technology |
 |---|---|
-| Web | Next.js 14, React, TypeScript |
-| API | Laravel 10, PHP, PostgreSQL 16 |
+| Web | Next.js 15, React 19, TypeScript |
+| API | Laravel 12, PHP, PostgreSQL 16 |
 | Mobile | Flutter, Dart, Riverpod |
 | Desktop | .NET 8, WPF, C# |
 | Temporary infrastructure | Redis 7 |
 | Local infrastructure | Docker Compose |
 
-Laravel must migrate to a supported Laravel 12+ line and Next.js must migrate to a patched 15.5.24+ line before production. See [dependency security](docs/security/dependency-security.md).
+The API runs on a supported patched Laravel 12 line and the web client on a supported patched Next.js 15 line. See [dependency security](docs/security/dependency-security.md) and [ADR 0031](docs/adr/0031-framework-version-upgrade.md).
 
 ## Quick start
 
