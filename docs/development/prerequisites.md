@@ -11,8 +11,8 @@ flowOS consists of multiple platform applications. Operating system capabilities
 | Component | Technology | Windows | Linux / WSL2 | macOS | Notes |
 |-----------|------------|---------|--------------|-------|-------|
 | **Local Infrastructure** | Docker Compose | Supported | Supported | Supported | Docker Desktop or Docker Engine v24+ |
-| **API** | Laravel 10 (PHP 8.2+) | Supported | Supported | Supported | Runs natively on host |
-| **Web** | Next.js 14 (Node.js 20) | Supported | Supported | Supported | Runs natively on host |
+| **API** | Laravel 12 (PHP 8.2+) | Supported | Supported | Supported | Runs natively on host |
+| **Web** | Next.js 15 (Node.js 20) | Supported | Supported | Supported | Runs natively on host |
 | **Mobile** | Flutter 3.16+ (Dart 3.3+) | Supported | Supported | Supported | Android emulator on all; iOS simulator requires macOS |
 | **Desktop** | .NET 8 WPF | **Required** | Unsupported* | Unsupported* | WPF requires Windows runtime (`net8.0-windows`) |
 

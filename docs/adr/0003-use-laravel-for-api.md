@@ -8,7 +8,7 @@ ACCEPTED
 
 ## Current Status Note
 
-The decision to use Laravel remains active. The original `Laravel 11+` version wording is a historical implementation assumption, not a current framework-version mandate. The repository currently uses Laravel 10.50.3; its documented pre-production security debt requires a deliberately tested migration to a supported Laravel 12+ line. See [API architecture](../architecture/api-architecture.md) and [dependency security](../security/dependency-security.md).
+The decision to use Laravel remains active. The original `Laravel 11+` version wording is a historical implementation assumption, not a current framework-version mandate. The repository has migrated from Laravel 10.50.3 to Laravel 12.70.0, which satisfies the documented pre-production security requirement to a supported Laravel 12+ line. See [API architecture](../architecture/api-architecture.md), [dependency security](../security/dependency-security.md), and [ADR 0031](0031-framework-version-upgrade.md).
 
 ## Context
 Need a PHP backend framework for the API with:

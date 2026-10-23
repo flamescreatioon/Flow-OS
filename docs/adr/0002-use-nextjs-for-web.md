@@ -8,7 +8,7 @@ ACCEPTED
 
 ## Current Status Note
 
-The decision to use Next.js remains active. The original `Next.js 14+` wording is historical and does not waive the documented framework security requirement: the repository's Next.js 14 line must migrate to a patched 15.5.24+ line before production. See [web architecture](../architecture/web-architecture.md) and [dependency security](../security/dependency-security.md).
+The decision to use Next.js remains active. The original `Next.js 14+` wording is historical and does not waive the documented framework security requirement: the repository has migrated from the Next.js 14 line to the patched Next.js 15.5.28 line with React 19, which satisfies that requirement. See [web architecture](../architecture/web-architecture.md), [dependency security](../security/dependency-security.md), and [ADR 0031](0031-framework-version-upgrade.md).
 
 ## Context
 Need a React framework for the web application with:

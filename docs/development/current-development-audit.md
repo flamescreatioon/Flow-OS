@@ -61,7 +61,7 @@ Inventory of files in `docs/development/`:
 
 | Term / Concept | Result | Classification | Notes |
 |----------------|--------|----------------|-------|
-| `Laravel 11` | Not found | `NOT FOUND` | Repository standard is Laravel 10 (migrating to 12+). |
+| `Laravel 11` | Not found | `NOT FOUND` | Repository standard is Laravel 12. |
 | `JWT` | Not found in dev docs | `NOT FOUND` | Replaced by Sanctum cookies (Web) and Sanctum tokens (Mobile/Desktop). |
 | `database-per-tenant` / `schema-per-tenant` | Not found | `NOT FOUND` | Single database multi-tenant architecture is standard. |
 | `RLS` | Not found as DB concept | `NOT FOUND` | Occurrences were substrings in "URLs"; no RLS requirements. |
@@ -80,8 +80,8 @@ Inventory of files in `docs/development/`:
 
 1. **Flutter Analyzer Findings**: 186 accepted findings in `apps/mobile`. `dev verify` intentionally returns exit code 1 locally.
 2. **Framework Security Upgrades**:
-   - `apps/api`: Laravel 10 framework line requires migration to Laravel 12+.
-   - `apps/web`: Next.js 14.2 requires migration to `>=15.5.24`.
+- `apps/api`: Laravel 12 framework line in use; the Laravel 10 migration requirement is resolved.
+- `apps/web`: Next.js 15.5.28 in use; the Next.js 14 migration requirement is resolved.
 3. **Database Seeders**: No business seeders exist in Sprint 0 (`NOT YET ESTABLISHED`).
 4. **Desktop Test Coverage**: Zero discovered tests in `FlowOS.*.Tests` projects.
 5. **Git Remote**: GitHub remote repository is currently unconfigured (`NOT CONFIGURED`).

@@ -23,4 +23,4 @@ The Sprint 0 scaffold is not represented as a claim of complete clean architectu
 
 ## Security status
 
-The current Laravel 10 line has a documented pre-production security migration requirement to a supported Laravel 12+ line. See [security architecture](security-architecture.md) and [dependency security](../security/dependency-security.md).
+The API runs on Laravel 12.70.0, a supported patched framework line. The pre-production security migration requirement to a supported Laravel 12+ line has been satisfied. See [security architecture](security-architecture.md) and [dependency security](../security/dependency-security.md).

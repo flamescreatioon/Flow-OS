@@ -48,6 +48,10 @@ apps/api/bootstrap/cache/*
 *.sublime-project
 *.sublime-workspace
 
+# AI tooling (local agent state; installed skill packs under .agents/ are tracked)
+.claude/
+.zcode/
+
 # OS
 .DS_Store
 Thumbs.db

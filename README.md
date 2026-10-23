@@ -1,6 +1,6 @@
 # flowOS
 
-flowOS is an offline-capable, multi-tenant business operating system for Nigerian businesses. It is a modular monolith foundation; Sprint 1 business modules have not started.
+flowOS is an offline-capable, multi-tenant business operating system for Nigerian businesses. It is a modular monolith foundation; the platform slice (authentication, organizations, memberships, RBAC, MFA) and the catalogue & inventory foundation are implemented, with further business modules to follow.
 
 ## Architecture
 
