@@ -15,7 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        Sanctum::ignoreMigrations();
+        // Sanctum 4 only publishes its migrations; this application owns the
+        // personal access token schema through its own migration.
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
 
         $this->app->scoped(TenantContext::class);

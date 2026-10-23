@@ -24,7 +24,9 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DATABASE_URL'),
-            'database' => env('DB_DATABASE', ':memory:'),
+            // SQLite uses its own variable so that the PostgreSQL database
+            // name can never resolve to a file next to the application.
+            'database' => env('DB_SQLITE_DATABASE', ':memory:'),
             'prefix' => '',
             'prefix_indexes' => true,
         ],
