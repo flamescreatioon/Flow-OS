@@ -10,14 +10,14 @@ Web, mobile, and desktop clients use the Laravel API. PostgreSQL is the authorit
 
 | Layer | Technology |
 |---|---|
-| Web | Next.js 15, React 19, TypeScript |
+| Web | Next.js 16, React 19, TypeScript |
 | API | Laravel 12, PHP, PostgreSQL 16 |
 | Mobile | Flutter, Dart, Riverpod |
 | Desktop | .NET 8, WPF, C# |
 | Temporary infrastructure | Redis 7 |
 | Local infrastructure | Docker Compose |
 
-The API runs on a supported patched Laravel 12 line and the web client on a supported patched Next.js 15 line. See [dependency security](docs/security/dependency-security.md) and [ADR 0031](docs/adr/0031-framework-version-upgrade.md).
+The API runs on a supported patched Laravel 12 line and the web client on a supported patched Next.js 16 line. See [dependency security](docs/security/dependency-security.md) and [ADR 0031](docs/adr/0031-framework-version-upgrade.md).
 
 ## Quick start
 
