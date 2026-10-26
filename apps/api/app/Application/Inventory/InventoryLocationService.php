@@ -11,6 +11,8 @@ final class InventoryLocationService
 {
     public function create(Organization $organization, array $data): InventoryLocation
     {
+        $this->assertCodeAvailable($organization, $data['code']);
+
         $branch = isset($data['branch_id']) && $data['branch_id'] !== null
             ? $this->resolveBranch($organization, $data['branch_id'])
             : null;
@@ -40,6 +42,7 @@ final class InventoryLocationService
         }
 
         if (array_key_exists('code', $data)) {
+            $this->assertCodeAvailable($organization, $data['code'], $location->id);
             $location->code = $data['code'];
         }
 
@@ -74,5 +77,26 @@ final class InventoryLocationService
         }
 
         return $branch;
+    }
+
+    /**
+     * The (organization_id, code) unique constraint remains the authority
+     * against concurrent writes; this check only turns the common duplicate
+     * into a validation error instead of a constraint failure. Archived
+     * locations are included because the constraint applies to them too.
+     */
+    private function assertCodeAvailable(Organization $organization, string $code, ?string $ignoreLocationId = null): void
+    {
+        $query = InventoryLocation::query()
+            ->where('organization_id', $organization->id)
+            ->where('code', $code);
+
+        if ($ignoreLocationId !== null) {
+            $query->whereKeyNot($ignoreLocationId);
+        }
+
+        if ($query->exists()) {
+            throw new LogicException('A location with this code already exists in this organization.');
+        }
     }
 }
