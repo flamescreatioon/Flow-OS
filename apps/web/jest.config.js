@@ -6,6 +6,6 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: { target: 'ES2020' } }],
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: { target: 'ES2020', jsx: 'react-jsx' } }],
   },
 };

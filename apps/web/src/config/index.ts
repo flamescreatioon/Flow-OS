@@ -1,5 +1,7 @@
 // Web application configuration
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
 export const config = {
   app: {
     name: 'flowOS',
@@ -7,7 +9,10 @@ export const config = {
     version: '0.0.0',
   },
   api: {
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1',
+    baseUrl: API_BASE_URL,
+    // The Sanctum CSRF cookie endpoint lives at the API origin root,
+    // outside the /api/v1 prefix.
+    csrfCookieUrl: `${new URL(API_BASE_URL).origin}/sanctum/csrf-cookie`,
   },
   auth: {
     loginPath: '/login',
