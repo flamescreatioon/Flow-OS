@@ -1,52 +1,37 @@
 'use client';
 
-import Link from 'next/link';
-import { useSession } from '@/features/auth/session-context';
+import { useState } from 'react';
+import { Menu } from 'lucide-react';
 import { OrganizationPicker } from '@/features/organizations/organization-picker';
-import { Button } from '@/components/ui/button';
+import { Sidebar } from '@/components/layout/sidebar';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { user, signOut } = useSession();
-
-  async function onSignOut(): Promise<void> {
-    await signOut();
-  }
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-lg font-semibold text-gray-900">
-              flowOS
-            </Link>
-            <nav className="flex items-center gap-4 text-sm">
-              <Link
-                href="/dashboard"
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/organizations"
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Organizations
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3">
+    <div className="flex min-h-dvh">
+      <Sidebar
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 bg-surface px-4 sm:px-6">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open navigation"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-secondary-container md:hidden"
+          >
+            <Menu className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <div className="ml-auto flex items-center gap-3">
             <OrganizationPicker />
-            <span className="hidden text-sm text-gray-600 sm:inline">
-              {user?.name}
-            </span>
-            <Button variant="ghost" onClick={() => void onSignOut()}>
-              Sign out
-            </Button>
           </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+        </header>
+        <main className="flex-1 px-4 py-6 sm:px-8 sm:py-8">
+          <div className="mx-auto w-full max-w-6xl">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

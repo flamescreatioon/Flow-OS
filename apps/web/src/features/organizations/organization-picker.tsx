@@ -8,7 +8,7 @@ export function OrganizationPicker() {
 
   if (loading && organizations.length === 0) {
     return (
-      <span className="text-sm text-gray-500" aria-live="polite">
+      <span className="text-sm text-on-surface-variant" aria-live="polite">
         Loading organizations…
       </span>
     );
@@ -18,7 +18,7 @@ export function OrganizationPicker() {
     return (
       <a
         href="/organizations"
-        className="rounded-md bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
+        className="inline-flex h-10 items-center justify-center rounded-full bg-warning-container px-4 text-sm font-medium text-on-warning-container transition-colors hover:bg-warning-container/80"
       >
         Create your first organization
       </a>
@@ -36,7 +36,7 @@ export function OrganizationPicker() {
           ) ?? null;
         selectOrganization(selected);
       }}
-      className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      className="h-10 rounded-full border-0 bg-secondary-container px-4 text-sm font-medium text-on-secondary-container focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-primary"
     >
       <option value="" disabled>
         Select organization

@@ -2,28 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Material Design 3-style color roles, seeded with the flowOS brand
+ * palette from packages/design-tokens. Values are RGB triplets so
+ * utilities can apply opacity (e.g. bg-primary/90).
+ * Light theme only; dark roles are a future decision.
+ */
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
+  --color-primary: 37 99 235; /* blue-600 */
+  --color-on-primary: 255 255 255;
+  --color-primary-container: 219 234 254; /* blue-100 */
+  --color-on-primary-container: 30 58 138; /* blue-900 */
+  --color-secondary-container: 243 244 246; /* neutral-100 */
+  --color-on-secondary-container: 31 41 55; /* neutral-800 */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  --color-surface: 255 255 255;
+  --color-surface-container: 249 250 251; /* neutral-50 */
+  --color-surface-container-high: 243 244 246; /* neutral-100 */
+  --color-on-surface: 17 24 39; /* neutral-900 */
+  --color-on-surface-variant: 75 85 99; /* neutral-600 */
+
+  --color-scrim: 17 24 39; /* neutral-900, used with opacity */
+
+  --color-success: 5 150 105; /* secondary-600 */
+  --color-success-container: 209 250 229; /* secondary-100 */
+  --color-on-success-container: 6 95 70; /* secondary-900 */
+  --color-warning: 146 64 14; /* amber-800, readable on containers */
+  --color-warning-container: 254 243 199; /* amber-100 */
+  --color-on-warning-container: 120 53 15; /* amber-900 */
+  --color-danger: 220 38 38; /* error-600 */
+  --color-danger-container: 254 226 226; /* error-100 */
+  --color-on-danger-container: 127 29 29; /* error-900 */
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: rgb(var(--color-on-surface));
+  background-color: rgb(var(--color-surface-container));
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -35,4 +58,56 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.drawer-in {
+  animation: drawer-in 200ms ease-out;
+}
+
+.scrim-in {
+  animation: scrim-in 200ms ease-out;
+}
+
+/* Subtle mount entrance for dashboard sections. Transform and opacity
+ * only; content renders without script and the reduced-motion fallback
+ * drops the travel while keeping the content. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: rise-in 240ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-in,
+  .scrim-in,
+  .rise-in {
+    animation: none;
+  }
 }

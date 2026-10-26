@@ -5,10 +5,11 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-blue-600 text-white hover:bg-blue-700 focus-visible:outline-blue-600',
+    'bg-primary text-on-primary hover:bg-primary/90 focus-visible:outline-primary',
   secondary:
-    'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:outline-gray-400',
-  ghost: 'text-gray-700 hover:bg-gray-100 focus-visible:outline-gray-400',
+    'bg-secondary-container text-on-secondary-container hover:bg-secondary-container/70 focus-visible:outline-primary',
+  ghost:
+    'text-on-surface-variant hover:bg-secondary-container focus-visible:outline-primary',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -27,7 +28,7 @@ export function Button({
       type={type}
       disabled={disabled}
       className={cn(
-        'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors',
+        'inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-medium transition-colors',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
         'disabled:pointer-events-none disabled:opacity-50',
         variantClasses[variant],
