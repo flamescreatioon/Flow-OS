@@ -7,9 +7,11 @@ info:
 
     **Implementation status:** `GET /health`, Authentication (Sanctum session + personal access tokens,
     registration, password reset, email verification), Organization lifecycle, Branch management,
-    Organization invitations/memberships, Organization-scoped RBAC, Devices, and Audit events are
-    implemented in this repository. This contract describes deployed endpoints only: organization
-    deletion and platform user administration are not part of the API and are not described here.
+    Organization invitations/memberships, Organization-scoped RBAC, Devices, Audit events,
+    Catalogue (products, categories, units of measure), and Inventory (locations, stock movements,
+    balances, counts, transfers) are implemented in this repository. This contract describes deployed
+    endpoints only: organization deletion and platform user administration are not part of the API
+    and are not described here.
 
     ## Authentication
 
@@ -939,6 +941,283 @@ paths:
       security: [{ bearerAuth: [] }]
       responses: { '200': { description: Audit events, content: { application/json: { schema: { $ref: '#/components/schemas/AuditEventCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
 
+  /organizations/{organization}/products:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listProducts
+      summary: List catalogue products
+      description: Requires the `product.view` permission.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: type, in: query, schema: { $ref: '#/components/schemas/ProductType' } }
+        - { name: category_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+        - { name: archived, in: query, description: "`true` lists only archived products, `false` only active ones, `all` both.", schema: { type: string, enum: ['true', 'false', 'all'], default: 'false' } }
+        - { name: q, in: query, description: Free-text search on name or SKU., schema: { type: string, maxLength: 255 } }
+        - { name: sort, in: query, description: Sort field; a leading `-` reverses the order., schema: { type: string, enum: [name, '-name', sku, '-sku', price, '-price', created_at, '-created_at'], default: name } }
+      responses: { '200': { description: Paginated products, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedProductsResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createProduct
+      summary: Create a catalogue product
+      description: Requires the `product.create` permission.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateProductRequest' } } }
+      responses: { '201': { description: Product created, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/products/{product}:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/ProductId' }
+    get:
+      operationId: getProduct
+      summary: Get a catalogue product
+      description: Requires the `product.view` permission.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Product details, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    patch:
+      operationId: updateProduct
+      summary: Update a catalogue product
+      description: Requires the `product.update` permission. Only the fields present in the body change.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateProductRequest' } } }
+      responses: { '200': { description: Product updated, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/products/{product}/archive:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/ProductId' }
+    post:
+      operationId: archiveProduct
+      summary: Archive a catalogue product
+      description: Requires the `product.archive` permission. An archived product keeps its history but cannot take stock movements.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Product archived, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/products/{product}/restore:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/ProductId' }
+    post:
+      operationId: restoreProduct
+      summary: Restore an archived catalogue product
+      description: Requires the `product.archive` permission.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Product restored, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/categories:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listCategories
+      summary: List product categories
+      description: Requires the `catalogue.view` permission. Ordered by name; up to 100 per page.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Categories, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createCategory
+      summary: Create a product category
+      description: Requires the `catalogue.manage` permission.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateCategoryRequest' } } }
+      responses: { '201': { description: Category created, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/categories/{category}:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/CategoryId' }
+    patch:
+      operationId: updateCategory
+      summary: Update a product category
+      description: Requires the `catalogue.manage` permission. Only the fields present in the body change.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateCategoryRequest' } } }
+      responses: { '200': { description: Category updated, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/unit-of-measures:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listUnitOfMeasures
+      summary: List units of measure
+      description: Requires the `catalogue.view` permission. Ordered by code; up to 100 per page.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Units of measure, content: { application/json: { schema: { $ref: '#/components/schemas/UnitOfMeasureCollection' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createUnitOfMeasure
+      summary: Create a unit of measure
+      description: Requires the `catalogue.manage` permission. The precision (0-3 decimal places) bounds the quantities that count against this unit may carry.
+      tags: [Catalogue]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateUnitOfMeasureRequest' } } }
+      responses: { '201': { description: Unit of measure created, content: { application/json: { schema: { $ref: '#/components/schemas/UnitOfMeasureResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/inventory-locations:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listInventoryLocations
+      summary: List inventory locations
+      description: Requires the `stock.view` permission. A location may optionally sit inside a branch of the same organization.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: branch_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+        - { name: archived, in: query, description: "`true` lists only archived locations, `false` only active ones.", schema: { type: string, enum: ['true', 'false'], default: 'false' } }
+        - { name: q, in: query, description: Free-text search on name or code., schema: { type: string, maxLength: 255 } }
+        - { name: sort, in: query, description: Sort field; a leading `-` reverses the order., schema: { type: string, enum: [name, '-name', code, '-code', created_at, '-created_at'], default: name } }
+      responses: { '200': { description: Paginated inventory locations, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedInventoryLocationsResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createInventoryLocation
+      summary: Create an inventory location
+      description: Requires the `stock.move` permission.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateInventoryLocationRequest' } } }
+      responses: { '201': { description: Location created, content: { application/json: { schema: { $ref: '#/components/schemas/InventoryLocationResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/inventory-locations/{location}:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/LocationId' }
+    get:
+      operationId: getInventoryLocation
+      summary: Get an inventory location
+      description: Requires the `stock.view` permission.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Location details, content: { application/json: { schema: { $ref: '#/components/schemas/InventoryLocationResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    patch:
+      operationId: updateInventoryLocation
+      summary: Update an inventory location
+      description: Requires the `stock.move` permission. Only the fields present in the body change.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateInventoryLocationRequest' } } }
+      responses: { '200': { description: Location updated, content: { application/json: { schema: { $ref: '#/components/schemas/InventoryLocationResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/inventory-locations/{location}/archive:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/LocationId' }
+    post:
+      operationId: archiveInventoryLocation
+      summary: Archive an inventory location
+      description: Requires the `stock.move` permission. An archived location cannot hold further stock movements.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Location archived, content: { application/json: { schema: { $ref: '#/components/schemas/InventoryLocationResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/stock-movements:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listStockMovements
+      summary: List stock movements
+      description: |
+        Requires the `stock.view` permission. Movement records are immutable and the server
+        establishes the list order (most recent first), regardless of any client-supplied
+        `occurred_at` on the records.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: product_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+        - { name: location_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+        - { name: type, in: query, schema: { $ref: '#/components/schemas/StockMovementType' } }
+      responses: { '200': { description: Paginated stock movements, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedStockMovementsResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: recordStockMovement
+      summary: Record a stock movement
+      description: |
+        Requires the `stock.move` permission, or `stock.adjust` when `type` is `adjustment`.
+        The direction is a property of the category, not of the caller: fixed-direction
+        categories (`opening`, `receipt`, `sale`, `return`) take a magnitude and the server
+        applies the sign; `adjustment` takes a signed quantity. A correction
+        (`corrects_movement_id`) must move stock in the opposite direction to the movement it
+        corrects, and a movement may be corrected at most once. Negative balances are
+        permitted and reported; the server never rejects a movement merely for driving stock
+        below zero.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateStockMovementRequest' } } }
+      responses: { '201': { description: Movement recorded, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/StockMovementResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/stock-balances:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listStockBalances
+      summary: List derived stock balances
+      description: |
+        Requires the `stock.view` permission. A balance is a read model maintained in the same
+        transaction as the movements that produced it; it is never a client-writable quantity.
+        Up to 100 per page, ordered by product then location.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: product_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+        - { name: location_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+      responses: { '200': { description: Paginated stock balances, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedStockBalancesResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/stock-counts:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    post:
+      operationId: recordStockCount
+      summary: Record a stock count
+      description: |
+        Requires the `stock.count` permission. The client states the counted quantity only;
+        the server computes the variance against the current balance and records it as a
+        `count` movement. A count that finds no variance is still recorded as evidence.
+        The counted quantity may not carry more decimal places than the product's unit of
+        measure allows.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateStockCountRequest' } } }
+      responses: { '201': { description: Count recorded, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/StockMovementResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/stock-transfers:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    post:
+      operationId: recordStockTransfer
+      summary: Transfer stock between two locations
+      description: |
+        Requires the `stock.transfer` permission. Creates a linked pair of immutable
+        movements (`transfer_out` at the source, `transfer_in` at the destination) that
+        reference each other through `transfer_movement_id`.
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateStockTransferRequest' } } }
+      responses: { '201': { description: Transfer recorded, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/StockTransferResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1013,6 +1292,24 @@ components:
 
     RoleId:
       name: role
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    ProductId:
+      name: product
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    CategoryId:
+      name: category
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    LocationId:
+      name: location
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -1599,6 +1896,527 @@ components:
     AuditEventCollection:
       type: object
       properties: { data: { type: array, items: { $ref: '#/components/schemas/AuditEvent' } } }
+
+    ProductType:
+      type: string
+      description: |
+        How a product behaves in inventory. A `stocked` product is tracked in inventory and is
+        the only kind that may take stock movements and balances; a `non_stocked` product is
+        bought and resold without tracking; a `service` has no stock at all.
+      enum: [stocked, non_stocked, service]
+
+    StockMovementType:
+      type: string
+      description: |
+        The reason a stock movement was recorded. The direction is a property of the category:
+        `opening`, `receipt`, and `return` increase stock; `sale` and `transfer_out` decrease it;
+        `transfer_in` increases it at the destination; `adjustment` and `count` carry a signed
+        variance. The server applies the sign for the fixed-direction categories, so a client
+        never states a negative quantity for them.
+      enum: [opening, receipt, sale, return, adjustment, transfer_in, transfer_out, count]
+
+    DecimalString:
+      type: string
+      description: |
+        An exact decimal transported as a string so no client parses it as a binary floating
+        point number. Canonical form: optional leading `-`, a required integer part, at most
+        the stated number of fractional digits, no thousands separators and no trailing point.
+      pattern: '^-?\d+(\.\d+)?$'
+
+    UnitOfMeasure:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        code:
+          type: string
+          example: "kg"
+        name:
+          type: string
+          example: "Kilogram"
+        precision:
+          type: integer
+          description: The maximum number of decimal places a quantity in this unit may carry (0-3).
+          minimum: 0
+          maximum: 3
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Category:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Product:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+        sku:
+          type: string
+          nullable: true
+        type:
+          $ref: '#/components/schemas/ProductType'
+        price:
+          type: string
+          description: Exact unit price decimal string in the organization currency, carried to the unit price scale of 4 fractional digits.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+          example: "1500.0000"
+        tax_code:
+          type: string
+          nullable: true
+        unit_of_measure:
+          $ref: '#/components/schemas/UnitOfMeasure'
+        category:
+          $ref: '#/components/schemas/Category'
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    InventoryLocation:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        code:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 150
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    StockMovement:
+      type: object
+      description: |
+        An immutable record of a stock change. A movement is never edited or deleted; a
+        mistake is repaired by recording a correction that points at the movement it reverses.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        product_id:
+          $ref: '#/components/schemas/UUID'
+        location_id:
+          $ref: '#/components/schemas/UUID'
+        type:
+          $ref: '#/components/schemas/StockMovementType'
+        quantity:
+          type: string
+          description: |
+            The signed applied quantity as an exact decimal string in thousandths of a unit of
+            measure (at most 3 fractional digits). Positive increases stock, negative decreases it.
+          pattern: '^-?\d+(\.\d{1,3})?$'
+          example: "-12.500"
+        unit_cost:
+          type: string
+          description: Exact decimal string on the unit price scale of 4 fractional digits, when the movement carries one.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+          nullable: true
+        reference:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        occurred_at:
+          type: string
+          format: date-time
+          description: Business context for when the change happened; not the ordering key.
+        corrects_movement_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        transfer_movement_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+          description: The other half of a transfer pair; set on both halves.
+        created_at: { type: string, format: date-time }
+
+    StockBalance:
+      type: object
+      description: A derived read model of the quantity on hand; maintained from movements, never client-writable.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        product_id:
+          $ref: '#/components/schemas/UUID'
+        location_id:
+          $ref: '#/components/schemas/UUID'
+        quantity:
+          $ref: '#/components/schemas/DecimalString'
+        product:
+          $ref: '#/components/schemas/Product'
+        location:
+          $ref: '#/components/schemas/InventoryLocation'
+        updated_at: { type: string, format: date-time }
+
+    CreateProductRequest:
+      type: object
+      required: [name, type, price, unit_of_measure_id]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        sku:
+          type: string
+          maxLength: 100
+          nullable: true
+        type:
+          $ref: '#/components/schemas/ProductType'
+        price:
+          type: string
+          description: Exact unit price decimal string with at most 4 fractional digits, in the organization currency.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        tax_code:
+          type: string
+          maxLength: 50
+          nullable: true
+        unit_of_measure_id:
+          $ref: '#/components/schemas/UUID'
+        category_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+
+    UpdateProductRequest:
+      type: object
+      description: Only the fields present in the body change.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        sku:
+          type: string
+          maxLength: 100
+          nullable: true
+        type:
+          $ref: '#/components/schemas/ProductType'
+        price:
+          type: string
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        tax_code:
+          type: string
+          maxLength: 50
+          nullable: true
+        unit_of_measure_id:
+          $ref: '#/components/schemas/UUID'
+        category_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+
+    CreateCategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    CreateUnitOfMeasureRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 20
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        precision:
+          type: integer
+          minimum: 0
+          maximum: 3
+          default: 0
+
+    CreateInventoryLocationRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 50
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+
+    UpdateInventoryLocationRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 50
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+
+    CreateStockMovementRequest:
+      type: object
+      required: [product_id, location_id, type, quantity]
+      properties:
+        product_id:
+          $ref: '#/components/schemas/UUID'
+        location_id:
+          $ref: '#/components/schemas/UUID'
+        type:
+          $ref: '#/components/schemas/StockMovementType'
+        quantity:
+          type: string
+          description: |
+            Exact decimal string with at most 3 fractional digits (thousandths of a unit).
+            For `opening`, `receipt`, `sale`, and `return` this is a magnitude and the server
+            applies the direction. For `adjustment` this is a signed quantity. Transfers and
+            counts have their own endpoints and are rejected here.
+          pattern: '^-?\d+(\.\d{1,3})?$'
+        unit_cost:
+          type: string
+          description: Exact decimal string with at most 4 fractional digits.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+          nullable: true
+        reference:
+          type: string
+          maxLength: 100
+          nullable: true
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+        occurred_at:
+          type: string
+          format: date-time
+          description: Defaults to now when omitted.
+        corrects_movement_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+          description: |
+            The movement this correction reverses. The correction must be for the same product
+            and location, must move stock in the opposite direction, and the original must not
+            have been corrected before.
+
+    CreateStockCountRequest:
+      type: object
+      required: [product_id, location_id, counted_quantity]
+      properties:
+        product_id:
+          $ref: '#/components/schemas/UUID'
+        location_id:
+          $ref: '#/components/schemas/UUID'
+        counted_quantity:
+          type: string
+          description: The quantity the count observed; never the balance. The server computes the variance. May not carry more decimal places than the product's unit of measure allows.
+          pattern: '^\d+(\.\d{1,3})?$'
+        reference:
+          type: string
+          maxLength: 100
+          nullable: true
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+        occurred_at:
+          type: string
+          format: date-time
+
+    CreateStockTransferRequest:
+      type: object
+      required: [product_id, from_location_id, to_location_id, quantity]
+      properties:
+        product_id:
+          $ref: '#/components/schemas/UUID'
+        from_location_id:
+          $ref: '#/components/schemas/UUID'
+        to_location_id:
+          $ref: '#/components/schemas/UUID'
+        quantity:
+          type: string
+          description: Exact decimal string with at most 3 fractional digits; a magnitude, applied out at the source and in at the destination.
+          pattern: '^-?\d+(\.\d{1,3})?$'
+        reference:
+          type: string
+          maxLength: 100
+          nullable: true
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+        occurred_at:
+          type: string
+          format: date-time
+
+    ProductResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Product'
+
+    PaginatedProductsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    CategoryResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Category'
+
+    CategoryCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    UnitOfMeasureResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/UnitOfMeasure'
+
+    UnitOfMeasureCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnitOfMeasure'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    InventoryLocationResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/InventoryLocation'
+
+    PaginatedInventoryLocationsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryLocation'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    StockMovementResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/StockMovement'
+
+    PaginatedStockMovementsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockMovement'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    StockTransferResponse:
+      type: object
+      description: The two halves of a transfer, created together.
+      properties:
+        data:
+          type: object
+          properties:
+            outbound:
+              $ref: '#/components/schemas/StockMovement'
+            inbound:
+              $ref: '#/components/schemas/StockMovement'
+
+    PaginatedStockBalancesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockBalance'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
 
   responses:
     BadRequest:

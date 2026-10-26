@@ -36,5 +36,7 @@ Current architecture is described in the [architecture entrypoint](../architectu
 | 0030 | Organization-Scoped RBAC | ACCEPTED | Organization roles and canonical permission authorization. |
 | 0031 | Framework Version Upgrade for Production Support | ACCEPTED | Laravel 10 to 12 and Next.js 14 to 15 for upstream security support. |
 | 0032 | Multi-Factor Authentication with Authenticator Applications | ACCEPTED | TOTP second factor enforced at credential issuance, with recovery codes. |
+| 0033 | Catalogue and Inventory Foundation | ACCEPTED | Exact scaled-decimal prices and quantities, server-owned movement direction, correction semantics, derived stock balances. |
+| 0034 | Web Client Offline Behavior and Write Queue | PROPOSED | Keeps the web a connected client today with replay-safe stock writes; proposes a phased IndexedDB write outbox without extending ADR 0012. |
 
 Use [the ADR template](template.md) for future significant decisions. An ADR is required for changes to tenancy, authentication, primary source of truth, offline conflict model, financial representation, architecture style, major infrastructure, or deployment architecture. Routine fixes, tests, refactors, and ordinary endpoints under existing boundaries do not require one.

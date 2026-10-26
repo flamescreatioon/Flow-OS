@@ -1,8 +1,14 @@
 import { api } from '@/lib/api';
-import type { ApiResponse, Organization, PaginatedResponse } from '@/types';
+import type { ApiResponse, Branch, Organization, PaginatedResponse } from '@/types';
 
 export async function listOrganizations(): Promise<PaginatedResponse<Organization>> {
   return api.get<PaginatedResponse<Organization>>('/organizations?per_page=100');
+}
+
+export async function listBranches(organizationId: string): Promise<PaginatedResponse<Branch>> {
+  return api.get<PaginatedResponse<Branch>>(
+    `/organizations/${organizationId}/branches?per_page=100`,
+  );
 }
 
 export async function createOrganization(input: {
