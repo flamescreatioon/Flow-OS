@@ -128,6 +128,16 @@ export async function recordGoodsReceipt(
   return body.data;
 }
 
+export async function getGoodsReceipt(
+  organizationId: string,
+  receiptId: string,
+): Promise<GoodsReceipt> {
+  const body = await api.get<ApiResponse<GoodsReceipt>>(
+    `${organizationPath(organizationId)}/goods-receipts/${receiptId}`,
+  );
+  return body.data;
+}
+
 /**
  * A fresh key per write. Repeating a submission with the same key replays
  * the original response instead of recording the receipt twice.

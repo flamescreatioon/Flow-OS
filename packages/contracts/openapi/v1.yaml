@@ -2838,6 +2838,8 @@ components:
           description: Snapshot of the supplier name at receipt time.
         location_id:
           $ref: '#/components/schemas/UUID'
+        location:
+          $ref: '#/components/schemas/InventoryLocation'
         receipt_number:
           type: integer
           description: The organization-scoped sequential number.

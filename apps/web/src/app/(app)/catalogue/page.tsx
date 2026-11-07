@@ -129,11 +129,19 @@ export default function CataloguePage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-on-surface">Catalogue</h1>
-        <p className="mt-1 text-sm text-on-surface-variant">
-          Products, units, and categories for {activeOrganization.name}.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-on-surface">Catalogue</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            Products, units, and categories for {activeOrganization.name}.
+          </p>
+        </div>
+        <Link
+          href="/catalogue/new"
+          className="inline-flex h-10 items-center rounded-full bg-primary px-4 text-sm font-medium text-on-primary transition-colors hover:bg-primary/90"
+        >
+          Add new product
+        </Link>
       </header>
 
       <section aria-label="Products" className="space-y-4">
@@ -260,30 +268,32 @@ export default function CataloguePage() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardTitle>{editingProduct ? 'Edit product' : 'Create a product'}</CardTitle>
-          <div className="mt-4">
-            <ProductForm
-              organizationId={activeOrganization.id}
-              units={units}
-              categories={categories}
-              product={editingProduct ?? undefined}
-              onCreated={() => setReload((current) => current + 1)}
-              onUpdated={(updated) => {
-                setProducts((current) => ({
-                  ...current,
-                  data: current.data.map((item) =>
-                    item.id === updated.id ? updated : item,
-                  ),
-                }));
-                setEditingProduct(null);
-              }}
-              onCancelEdit={() => setEditingProduct(null)}
-            />
-          </div>
-        </Card>
+        {editingProduct && (
+          <Card>
+            <CardTitle>Edit product</CardTitle>
+            <div className="mt-4">
+              <ProductForm
+                organizationId={activeOrganization.id}
+                units={units}
+                categories={categories}
+                product={editingProduct}
+                onCreated={() => setReload((current) => current + 1)}
+                onUpdated={(updated) => {
+                  setProducts((current) => ({
+                    ...current,
+                    data: current.data.map((item) =>
+                      item.id === updated.id ? updated : item,
+                    ),
+                  }));
+                  setEditingProduct(null);
+                }}
+                onCancelEdit={() => setEditingProduct(null)}
+              />
+            </div>
+          </Card>
+        )}
 
-        <div className="space-y-4">
+        <div className={editingProduct ? 'space-y-4' : 'space-y-4 lg:col-span-2'}>
           <Card>
             <CardTitle>Units of measure</CardTitle>
             {units.length > 0 && (

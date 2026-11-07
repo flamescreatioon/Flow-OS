@@ -15,6 +15,7 @@ class GoodsReceiptResource extends JsonResource
             'branch_id' => $this->branch_id,
             'supplier_id' => $this->supplier_id,
             'location_id' => $this->location_id,
+            'location' => new InventoryLocationResource($this->whenLoaded('location')),
             // Snapshots: the supplier and product names at receipt time.
             'supplier_name' => $this->supplier_name,
             'receipt_number' => $this->receipt_number,

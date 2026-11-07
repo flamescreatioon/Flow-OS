@@ -199,6 +199,7 @@ export interface GoodsReceipt {
   supplier_id: string | null;
   supplier_name: string | null;
   location_id: string;
+  location?: InventoryLocation;
   receipt_number: number;
   document_number: string;
   status: GoodsReceiptStatus;

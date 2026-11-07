@@ -111,3 +111,21 @@ a {
     animation: none;
   }
 }
+
+/* Receipt printing: only the .print-document subtree reaches the page, so
+   the app shell (sidebar, header, navigation) is excluded from the printout. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-document,
+  .print-document * {
+    visibility: visible;
+  }
+
+  .print-document {
+    position: absolute;
+    inset: 0;
+  }
+}

@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Info, Printer } from 'lucide-react';
 import { listGoodsReceipts, listSuppliers } from '@/features/purchasing/service';
 import { listProducts } from '@/features/catalogue/service';
 import { listInventoryLocations } from '@/features/inventory/service';
 import { useActiveOrganization } from '@/features/organizations/active-organization-context';
-import { RecordReceiptForm } from '@/features/purchasing/record-receipt-form';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -90,12 +90,20 @@ export default function PurchasingPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-on-surface">Purchasing</h1>
-        <p className="mt-1 text-sm text-on-surface-variant">
-          Goods received into stock across {activeOrganization.name}. Each receipt
-          records the cost and moves stock through inventory.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-on-surface">Purchasing</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            Goods received into stock across {activeOrganization.name}. Each receipt
+            records the cost and moves stock through inventory.
+          </p>
+        </div>
+        <Link
+          href="/purchasing/new"
+          className="inline-flex h-10 items-center rounded-full bg-primary px-4 text-sm font-medium text-on-primary transition-colors hover:bg-primary/90"
+        >
+          Record goods receipt
+        </Link>
       </header>
 
       <section aria-label="Goods receipts" className="space-y-4">
@@ -152,6 +160,7 @@ export default function PurchasingPage() {
                   <th scope="col" className="px-4 py-3 font-medium">Received on</th>
                   <th scope="col" className="px-4 py-3 font-medium">Status</th>
                   <th scope="col" className="px-4 py-3 font-medium text-right">Total cost</th>
+                  <th scope="col" className="px-4 py-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,6 +178,24 @@ export default function PurchasingPage() {
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-on-surface">
                       {formatDecimalString(receipt.total_cost)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/purchasing/receipts/${receipt.id}?print=1`}
+                          className="inline-flex h-8 items-center gap-1.5 rounded-full border border-gray-300 px-3 text-xs font-medium text-on-surface transition-colors hover:bg-secondary-container"
+                          title="Open the printable receipt"
+                        >
+                          <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+                          Print
+                        </Link>
+                        <span
+                          title="Receipts are permanent. To fix a mistake, record an inventory adjustment."
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant/60"
+                        >
+                          <Info className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -188,9 +215,8 @@ export default function PurchasingPage() {
         />
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardTitle>Recent receipt lines</CardTitle>
+      <Card>
+        <CardTitle>Recent receipt lines</CardTitle>
           {receipts.data.length === 0 ? (
             <p className="mt-2 text-sm text-on-surface-variant">Nothing received yet.</p>
           ) : (
@@ -220,27 +246,7 @@ export default function PurchasingPage() {
                 )}
             </ul>
           )}
-        </Card>
-
-        <Card>
-          <CardTitle>Record a goods receipt</CardTitle>
-          <div className="mt-4">
-            <RecordReceiptForm
-              organizationId={activeOrganization.id}
-              products={products.filter((product) => product.type === 'stocked')}
-              locations={locations.filter((location) => !location.archived_at)}
-              suppliers={suppliers.filter((supplier) => !supplier.archived_at)}
-              onRecorded={(receipt) =>
-                setReceipts((current) => ({
-                  ...current,
-                  data: [receipt, ...current.data],
-                  total: current.total + 1,
-                }))
-              }
-            />
-          </div>
-        </Card>
-      </div>
+      </Card>
     </div>
   );
 }
