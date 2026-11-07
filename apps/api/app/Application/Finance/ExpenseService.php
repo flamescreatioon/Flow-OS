@@ -81,6 +81,19 @@ final class ExpenseService
         }
 
         return DB::transaction(function () use ($organization, $expense, $data, $actor) {
+            // Re-read the row under a lock: the route-bound instance may be
+            // stale if a concurrent request voided the expense between the
+            // check above and this transaction.
+            $expense = Expense::query()->whereKey($expense->id)->lockForUpdate()->firstOrFail();
+
+            if ($expense->organization_id !== $organization->id) {
+                throw new LogicException('The expense does not belong to this organization.');
+            }
+
+            if (! $expense->isRecorded()) {
+                throw new LogicException('A voided expense cannot be edited.');
+            }
+
             if (array_key_exists('expense_category_id', $data)) {
                 $expense->expense_category_id = $this->resolveCategory($organization, $data['expense_category_id'])->id;
             }
@@ -141,6 +154,18 @@ final class ExpenseService
         }
 
         return DB::transaction(function () use ($organization, $expense, $actor) {
+            // Re-read the row under a lock so two concurrent voids cannot both
+            // apply and a concurrent edit cannot land on a voided record.
+            $expense = Expense::query()->whereKey($expense->id)->lockForUpdate()->firstOrFail();
+
+            if ($expense->organization_id !== $organization->id) {
+                throw new LogicException('The expense does not belong to this organization.');
+            }
+
+            if ($expense->isVoided()) {
+                throw new LogicException('The expense is already voided.');
+            }
+
             $expense->forceFill([
                 'status' => ExpenseStatus::Voided->value,
                 'voided_at' => now(),

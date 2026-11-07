@@ -395,6 +395,33 @@ class StockMovementTest extends TestCase
         $this->assertTrue($balance->isNegative());
     }
 
+    public function test_a_movement_rejects_a_negative_unit_cost(): void
+    {
+        [$organization, , $product, $location] = $this->stockingContext();
+
+        $this->postJson("/api/v1/organizations/{$organization->id}/stock-movements", [
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'type' => 'sale',
+            'quantity' => '2.000',
+            'unit_cost' => '-5.0000',
+        ])->assertUnprocessable();
+
+        // Zero cost is allowed (a free issue), negative is not.
+        $this->postJson("/api/v1/organizations/{$organization->id}/stock-movements", [
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'type' => 'sale',
+            'quantity' => '1.000',
+            'unit_cost' => '0.0000',
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('stock_movements', [
+            'product_id' => $product->id,
+            'unit_cost' => 0,
+        ]);
+    }
+
     public function test_movements_are_listed_in_server_order(): void
     {
         [$organization, , $product, $location] = $this->stockingContext();

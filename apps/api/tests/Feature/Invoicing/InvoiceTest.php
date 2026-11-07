@@ -184,6 +184,34 @@ class InvoiceTest extends TestCase
         Invoice::query()->findOrFail($invoiceId)->lines()->delete();
     }
 
+    public function test_a_stale_draft_instance_cannot_be_edited_after_a_concurrent_void(): void
+    {
+        [$organization, $user] = $this->invoiceContext();
+
+        $invoiceId = $this->postJson(
+            "/api/v1/organizations/{$organization->id}/invoices",
+            $this->invoicePayload()
+        )->assertCreated()->json('data.id');
+
+        // Simulate a concurrent void: the caller holds a model instance that
+        // still says draft, but the row is now voided.
+        $stale = Invoice::query()->findOrFail($invoiceId);
+        $this->postJson("/api/v1/organizations/{$organization->id}/invoices/{$invoiceId}/void")
+            ->assertOk();
+
+        // The service must re-read the row under lock and refuse the edit
+        // instead of trusting the stale instance.
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Only a draft invoice can be edited.');
+
+        app(\App\Application\Invoicing\InvoiceService::class)->updateDraft(
+            $organization,
+            $stale,
+            ['note' => 'raced edit'],
+            $user
+        );
+    }
+
     public function test_void_is_terminal_and_retains_the_record(): void
     {
         [$organization] = $this->invoiceContext();

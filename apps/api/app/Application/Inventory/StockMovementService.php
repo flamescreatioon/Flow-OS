@@ -14,6 +14,7 @@ use App\Models\StockBalance;
 use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use LogicException;
 
 /**
@@ -213,7 +214,7 @@ final class StockMovementService
             'corrects_movement_id' => $corrects?->id,
             'type' => $type,
             'quantity' => $quantity->scaledValue(),
-            'unit_cost' => isset($data['unit_cost']) ? UnitPrice::parse($data['unit_cost'])->scaledValue() : null,
+            'unit_cost' => isset($data['unit_cost']) ? $this->resolveUnitCost($data['unit_cost'])->scaledValue() : null,
             'reference' => $data['reference'] ?? null,
             'note' => $data['note'] ?? null,
             'occurred_at' => $data['occurred_at'] ?? now(),
@@ -254,6 +255,22 @@ final class StockMovementService
             ->first();
 
         return $balance ? Quantity::of($balance->quantity) : Quantity::of(0);
+    }
+
+    /**
+     * A movement's unit cost is a snapshot for future valuation: never
+     * negative. Goods receipts state the same rule; manual movements must
+     * not poison the cost history either.
+     */
+    private function resolveUnitCost(string $amount): UnitPrice
+    {
+        $unitCost = UnitPrice::parse($amount);
+
+        if ($unitCost->isNegative()) {
+            throw new InvalidArgumentException('The unit cost must not be negative.');
+        }
+
+        return $unitCost;
     }
 
     private function resolveProduct(Organization $organization, string $id): Product

@@ -112,6 +112,19 @@ final class InvoiceService
         }
 
         return DB::transaction(function () use ($organization, $invoice, $data, $actor) {
+            // Re-read the row under a lock: the route-bound instance may be
+            // stale if a concurrent request changed the state between the
+            // check above and this transaction.
+            $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+
+            if ($invoice->organization_id !== $organization->id) {
+                throw new LogicException('The invoice does not belong to this organization.');
+            }
+
+            if (! $invoice->isDraft()) {
+                throw new LogicException('Only a draft invoice can be edited.');
+            }
+
             if (array_key_exists('customer_id', $data)) {
                 if ($data['customer_id'] === null) {
                     $invoice->customer_id = null;
@@ -190,6 +203,18 @@ final class InvoiceService
         }
 
         return DB::transaction(function () use ($organization, $invoice, $actor) {
+            // Re-read the row under a lock so a concurrent edit or void that
+            // raced the check above cannot be issued or double-issued.
+            $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+
+            if ($invoice->organization_id !== $organization->id) {
+                throw new LogicException('The invoice does not belong to this organization.');
+            }
+
+            if (! $invoice->isDraft()) {
+                throw new LogicException('Only a draft invoice can be issued.');
+            }
+
             $stored = $invoice->lines()->orderBy('created_at')->orderBy('id')->get()->all();
 
             if ($stored === []) {
@@ -261,6 +286,18 @@ final class InvoiceService
         }
 
         return DB::transaction(function () use ($organization, $invoice, $actor) {
+            // Re-read the row under a lock so two concurrent voids (or a void
+            // racing an issue) cannot both apply.
+            $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+
+            if ($invoice->organization_id !== $organization->id) {
+                throw new LogicException('The invoice does not belong to this organization.');
+            }
+
+            if ($invoice->isVoided()) {
+                throw new LogicException('The invoice is already voided.');
+            }
+
             $invoice->forceFill([
                 'status' => InvoiceStatus::Voided->value,
                 'voided_at' => now(),
@@ -313,15 +350,29 @@ final class InvoiceService
         $resolver = app(ChannelResolver::class);
         $driver = $resolver->driverFor($channel);
 
-        $delivery = NotificationDelivery::create([
-            'organization_id' => $organization->id,
-            'entity_type' => 'invoice',
-            'entity_id' => $invoice->id,
-            'channel' => $channel,
-            'driver' => $driver,
-            'recipient' => $recipient,
-            'status' => 'queued',
-        ]);
+        // The delivery row is created under a lock that re-checks the invoice
+        // state, so a void racing the send cannot message a voided document.
+        $delivery = DB::transaction(function () use ($organization, $invoice, $channel, $driver, $recipient) {
+            $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+
+            if ($invoice->organization_id !== $organization->id) {
+                throw new LogicException('The invoice does not belong to this organization.');
+            }
+
+            if (! $invoice->isIssued()) {
+                throw new LogicException('Only an issued invoice can be sent.');
+            }
+
+            return NotificationDelivery::create([
+                'organization_id' => $organization->id,
+                'entity_type' => 'invoice',
+                'entity_id' => $invoice->id,
+                'channel' => $channel,
+                'driver' => $driver,
+                'recipient' => $recipient,
+                'status' => 'queued',
+            ]);
+        });
 
         $message = $this->buildMessage($organization, $invoice, $channel, $delivery->id);
 
