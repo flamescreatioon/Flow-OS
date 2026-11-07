@@ -209,4 +209,83 @@ export interface GoodsReceipt {
   created_at: string;
   updated_at: string;
 }
+// Invoicing (see packages/contracts/openapi/v1.yaml, Invoicing tags).
 
+export type InvoiceStatus = 'draft' | 'issued' | 'voided';
+
+export type TaxMode = 'exclusive' | 'inclusive';
+
+export type NotificationChannelName = 'email' | 'sms' | 'whatsapp';
+
+export type NotificationDeliveryStatus = 'queued' | 'sent' | 'failed';
+
+export interface Customer {
+  id: string;
+  organization_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvoiceLine {
+  id: string;
+  invoice_id: string;
+  product_id: string | null;
+  description: string;
+  quantity: string;
+  unit_price: string;
+  discount: string;
+  tax_amount: string;
+  line_total: string;
+}
+
+export interface Invoice {
+  id: string;
+  organization_id: string;
+  branch_id: string | null;
+  customer_id: string | null;
+  customer_name: string | null;
+  invoice_number: number | null;
+  document_number: string | null;
+  status: InvoiceStatus;
+  issued_at: string | null;
+  voided_at: string | null;
+  due_on: string | null;
+  currency: string;
+  tax_rate_percent: string | null;
+  tax_mode: TaxMode | null;
+  subtotal: string;
+  discount_total: string;
+  tax_total: string;
+  grand_total: string;
+  note: string | null;
+  lines: InvoiceLine[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaxSettings {
+  organization_id: string;
+  tax_enabled: boolean;
+  tax_rate_percent: string | null;
+  tax_mode: TaxMode;
+  updated_at: string | null;
+}
+
+export interface NotificationDelivery {
+  id: string;
+  organization_id: string;
+  entity_type: string;
+  entity_id: string;
+  channel: NotificationChannelName;
+  driver: string;
+  recipient: string;
+  status: NotificationDeliveryStatus;
+  error_message: string | null;
+  sent_at: string | null;
+  created_at: string;
+}

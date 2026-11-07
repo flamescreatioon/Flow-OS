@@ -39,6 +39,17 @@ enum PermissionKey: string
     case SupplierArchive = 'supplier.archive';
     case PurchaseView = 'purchase.view';
     case PurchaseReceive = 'purchase.receive';
+    case CustomerView = 'customer.view';
+    case CustomerCreate = 'customer.create';
+    case CustomerUpdate = 'customer.update';
+    case CustomerArchive = 'customer.archive';
+    case InvoiceView = 'invoice.view';
+    case InvoiceCreate = 'invoice.create';
+    case InvoiceUpdate = 'invoice.update';
+    case InvoiceIssue = 'invoice.issue';
+    case InvoiceVoid = 'invoice.void';
+    case InvoiceSend = 'invoice.send';
+    case InvoiceManage = 'invoice.manage';
 
     public static function keys(): array
     {

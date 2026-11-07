@@ -10,16 +10,19 @@ use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Auth\TokenController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\CatalogueController;
+use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\InventoryLocationController;
 use App\Http\Controllers\Api\V1\InvitationController;
+use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\MembershipController;
 use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SupplierController;
+use App\Http\Controllers\Api\V1\TaxSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -143,6 +146,30 @@ Route::prefix('v1')->group(function () {
                 Route::patch('/suppliers/{supplier}', [SupplierController::class, 'update']);
                 Route::post('/suppliers/{supplier}/archive', [SupplierController::class, 'archive']);
                 Route::post('/goods-receipts', [GoodsReceiptController::class, 'store'])->middleware('idempotency');
+            });
+        });
+        // Invoicing. The organization in the path is the scope and the
+        // permission check is the authority. An issued invoice is immutable
+        // (ADR 0036): drafts edit freely, issue snapshots, void is terminal,
+        // and delivery never determines correctness.
+        Route::prefix('organizations/{organization}')->group(function () {
+            Route::get('/customers', [CustomerController::class, 'index']);
+            Route::get('/customers/{customer}', [CustomerController::class, 'show']);
+            Route::get('/invoices', [InvoiceController::class, 'index']);
+            Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
+            Route::get('/invoices/{invoice}/deliveries', [InvoiceController::class, 'deliveries']);
+            Route::get('/tax-settings', [TaxSettingsController::class, 'show']);
+
+            Route::middleware(['verified-writes'])->group(function () {
+                Route::post('/customers', [CustomerController::class, 'store']);
+                Route::patch('/customers/{customer}', [CustomerController::class, 'update']);
+                Route::post('/customers/{customer}/archive', [CustomerController::class, 'archive']);
+                Route::post('/invoices', [InvoiceController::class, 'store']);
+                Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update']);
+                Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue'])->middleware('idempotency');
+                Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void'])->middleware('idempotency');
+                Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->middleware('idempotency');
+                Route::patch('/tax-settings', [TaxSettingsController::class, 'update']);
             });
         });
 

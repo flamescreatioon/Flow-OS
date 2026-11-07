@@ -116,6 +116,16 @@ class Organization extends Tenant
         return $this->hasMany(GoodsReceipt::class);
     }
 
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function getTenantDatabaseName(): string
     {
         return 'flowos_'.$this->id;

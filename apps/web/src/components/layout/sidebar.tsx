@@ -44,12 +44,12 @@ const workspaceLinks: NavLink[] = [
   { label: 'Catalogue', href: '/catalogue', icon: Package },
   { label: 'Inventory', href: '/inventory', icon: Boxes },
   { label: 'Purchasing', href: '/purchasing', icon: Truck },
+  { label: 'Invoicing', href: '/invoicing', icon: ReceiptText },
   { label: 'Organizations', href: '/organizations', icon: Building2 },
 ];
 
 const upcomingLinks: UpcomingLink[] = [
   { label: 'Sales', icon: ShoppingCart },
-  { label: 'Invoicing', icon: ReceiptText },
   { label: 'Expenses', icon: Wallet },
   { label: 'Reporting', icon: BarChart3 },
 ];
