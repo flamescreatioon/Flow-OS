@@ -50,6 +50,20 @@ final class DecimalMath
         return self::divideRoundHalfUp($left * $right, 10 ** $reduction);
     }
 
+    /**
+     * Multiply two scaled integers exactly, rejecting a result that exceeds
+     * the integer range. Use this when the caller divides the product down
+     * to a safe scale itself.
+     */
+    public static function multiplyExact(int $left, int $right): int
+    {
+        if ($left !== 0 && $right !== 0 && abs($left) > PHP_INT_MAX / abs($right)) {
+            throw new InvalidArgumentException('The product of the amounts is out of range.');
+        }
+
+        return $left * $right;
+    }
+
 
     /**
      * Divide two integers, rounding half-up away from zero on exact halves.

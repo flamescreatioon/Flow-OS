@@ -1218,6 +1218,303 @@ paths:
         content: { application/json: { schema: { $ref: '#/components/schemas/CreateStockTransferRequest' } } }
       responses: { '201': { description: Transfer recorded, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/StockTransferResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
 
+  /organizations/{organization}/suppliers:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listSuppliers
+      summary: List suppliers
+      description: Requires the `supplier.view` permission. Ordered by name.
+      tags: [Purchasing]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: archived, in: query, description: "`true` lists only archived suppliers, `false` only active ones.", schema: { type: string, enum: ['true', 'false'], default: 'false' } }
+        - { name: q, in: query, description: 'Free-text search on name, email or phone.', schema: { type: string, maxLength: 255 } }
+        - { name: sort, in: query, description: Sort field; a leading `-` reverses the order., schema: { type: string, enum: [name, '-name', created_at, '-created_at'], default: name } }
+      responses: { '200': { description: Paginated suppliers, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedSuppliersResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createSupplier
+      summary: Create a supplier
+      description: Requires the `supplier.create` permission. Supplier names are not unique.
+      tags: [Purchasing]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateSupplierRequest' } } }
+      responses: { '201': { description: Supplier created, content: { application/json: { schema: { $ref: '#/components/schemas/SupplierResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/suppliers/{supplier}:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/SupplierId' }
+    get:
+      operationId: getSupplier
+      summary: Get a supplier
+      description: Requires the `supplier.view` permission.
+      tags: [Purchasing]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Supplier details, content: { application/json: { schema: { $ref: '#/components/schemas/SupplierResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    patch:
+      operationId: updateSupplier
+      summary: Update a supplier
+      description: Requires the `supplier.update` permission. Only the fields present in the body change.
+      tags: [Purchasing]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateSupplierRequest' } } }
+      responses: { '200': { description: Supplier updated, content: { application/json: { schema: { $ref: '#/components/schemas/SupplierResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/suppliers/{supplier}/archive:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/SupplierId' }
+    post:
+      operationId: archiveSupplier
+      summary: Archive a supplier
+      description: Requires the `supplier.archive` permission. An archived supplier cannot receive goods. Suppliers are archived, never deleted.
+      tags: [Purchasing]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Supplier archived, content: { application/json: { schema: { $ref: '#/components/schemas/SupplierResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/goods-receipts:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listGoodsReceipts
+      summary: List goods receipts
+      description: Requires the `purchase.view` permission. Receipts are immutable and ordered most recent first.
+      tags: [Purchasing]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: supplier_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+        - { name: location_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+      responses: { '200': { description: Paginated goods receipts, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedGoodsReceiptsResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: recordGoodsReceipt
+      summary: Record a goods receipt
+      description: |
+        Requires the `purchase.receive` permission. The receipt is finalized on creation: each line
+        snapshots the product name and unit cost and produces one immutable `receipt` stock movement
+        carrying the cost, so the receipt never edits stock balances directly (ADR 0035). The server
+        assigns the sequential document number and computes the line and document totals; client
+        totals are never accepted. An archived supplier, a non-stocked product, or a non-positive
+        quantity is rejected.
+      tags: [Purchasing]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateGoodsReceiptRequest' } } }
+      responses: { '201': { description: Receipt recorded, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/GoodsReceiptResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/goods-receipts/{receipt}:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/ReceiptId' }
+    get:
+      operationId: getGoodsReceipt
+      summary: Get a goods receipt
+      description: Requires the `purchase.view` permission.
+      tags: [Purchasing]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Receipt details, content: { application/json: { schema: { $ref: '#/components/schemas/GoodsReceiptResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/customers:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listCustomers
+      summary: List customers
+      description: Requires the `customer.view` permission. Ordered by name.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: archived, in: query, description: "`true` lists only archived customers, `false` only active ones.", schema: { type: string, enum: ['true', 'false'], default: 'false' } }
+        - { name: q, in: query, description: 'Free-text search on name, email or phone.', schema: { type: string, maxLength: 255 } }
+        - { name: sort, in: query, description: Sort field; a leading `-` reverses the order., schema: { type: string, enum: [name, '-name', created_at, '-created_at'], default: name } }
+      responses: { '200': { description: Paginated customers, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedCustomersResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createCustomer
+      summary: Create a customer
+      description: Requires the `customer.create` permission. Customer names are not unique.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateCustomerRequest' } } }
+      responses: { '201': { description: Customer created, content: { application/json: { schema: { $ref: '#/components/schemas/CustomerResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/customers/{customer}:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/CustomerId' }
+    get:
+      operationId: getCustomer
+      summary: Get a customer
+      description: Requires the `customer.view` permission.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Customer details, content: { application/json: { schema: { $ref: '#/components/schemas/CustomerResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    patch:
+      operationId: updateCustomer
+      summary: Update a customer
+      description: Requires the `customer.update` permission. Only the fields present in the body change.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateCustomerRequest' } } }
+      responses: { '200': { description: Customer updated, content: { application/json: { schema: { $ref: '#/components/schemas/CustomerResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/customers/{customer}/archive:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/CustomerId' }
+    post:
+      operationId: archiveCustomer
+      summary: Archive a customer
+      description: Requires the `customer.archive` permission. An archived customer cannot be invoiced. Customers are archived, never deleted.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Customer archived, content: { application/json: { schema: { $ref: '#/components/schemas/CustomerResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/tax-settings:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: getTaxSettings
+      summary: Get the organization tax settings
+      description: Requires the `invoice.view` permission. Returns the defaults when nothing is configured yet.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Tax settings, content: { application/json: { schema: { $ref: '#/components/schemas/TaxSettingsResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    patch:
+      operationId: updateTaxSettings
+      summary: Update the organization tax settings
+      description: |
+        Requires the `invoice.manage` permission. A rate is required when tax is enabled. The rate is a
+        percentage at the unit price scale (e.g. `7.5` stores 7.5000). Issued invoices snapshot the
+        settings at issue time; changing them never rewrites issued documents.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateTaxSettingsRequest' } } }
+      responses: { '200': { description: Tax settings updated, content: { application/json: { schema: { $ref: '#/components/schemas/TaxSettingsResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/invoices:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listInvoices
+      summary: List invoices
+      description: Requires the `invoice.view` permission. Ordered most recent first.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: customer_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/InvoiceStatus' } }
+      responses: { '200': { description: Paginated invoices, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedInvoicesResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createInvoice
+      summary: Create a draft invoice
+      description: |
+        Requires the `invoice.create` permission. A draft carries no document number and no tax;
+        the server computes the line totals from validated inputs and never accepts client totals
+        (ADR 0036).
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateInvoiceRequest' } } }
+      responses: { '201': { description: Draft created, content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/invoices/{invoice}:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/InvoiceId' }
+    get:
+      operationId: getInvoice
+      summary: Get an invoice
+      description: Requires the `invoice.view` permission.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Invoice details, content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    patch:
+      operationId: updateInvoice
+      summary: Update a draft invoice
+      description: |
+        Requires the `invoice.update` permission. Only a draft is editable; lines are replaced as a
+        whole when present. An issued invoice is frozen.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateInvoiceRequest' } } }
+      responses: { '200': { description: Draft updated, content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/invoices/{invoice}/issue:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/InvoiceId' }
+    post:
+      operationId: issueInvoice
+      summary: Issue a draft invoice
+      description: |
+        Requires the `invoice.issue` permission. Issue assigns the organization-scoped sequential
+        document number, snapshots the customer, tax settings, and every line's commercial values,
+        and freezes the document (ADR 0036). A draft needs at least one line. There is no un-issue.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses: { '200': { description: Invoice issued, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/invoices/{invoice}/void:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/InvoiceId' }
+    post:
+      operationId: voidInvoice
+      summary: Void an invoice
+      description: Requires the `invoice.void` permission. Void is terminal; the record is retained as evidence and never deleted. Credit notes are a future direction.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses: { '200': { description: Invoice voided, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/invoices/{invoice}/send:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/InvoiceId' }
+    post:
+      operationId: sendInvoice
+      summary: Send an issued invoice over a delivery channel
+      description: |
+        Requires the `invoice.send` permission and an issued invoice. Accepts `email`, `sms`, or
+        `whatsapp`; the recipient defaults from the attached customer's email (email channel) or
+        phone (sms/whatsapp), and an explicit recipient overrides it. The delivery attempt is
+        tracked; the message content is built server-side from the snapshot (ADR 0037). Delivery
+        state never changes the invoice.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SendInvoiceRequest' } } }
+      responses: { '202': { description: Delivery accepted, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/NotificationDeliveryResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/invoices/{invoice}/deliveries:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/InvoiceId' }
+    get:
+      operationId: listInvoiceDeliveries
+      summary: List the delivery attempts for an invoice
+      description: Requires the `invoice.view` permission. Ordered most recent first.
+      tags: [Invoicing]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Paginated delivery attempts, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedNotificationDeliveriesResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1310,6 +1607,30 @@ components:
 
     LocationId:
       name: location
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    SupplierId:
+      name: supplier
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    ReceiptId:
+      name: receipt
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    CustomerId:
+      name: customer
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    InvoiceId:
+      name: invoice
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -2413,6 +2734,649 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StockBalance'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    Supplier:
+      type: object
+      description: Organization-scoped procurement master data. Archived, never deleted.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        address:
+          type: string
+          maxLength: 255
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    GoodsReceiptStatus:
+      type: string
+      description: A receipt is finalized on creation (ADR 0035); every receipt is recorded.
+      enum: [recorded]
+
+    GoodsReceiptLine:
+      type: object
+      description: One product line of a goods receipt. The product name and cost are snapshots, so history never depends on the current catalogue entry.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        goods_receipt_id:
+          $ref: '#/components/schemas/UUID'
+        product_id:
+          $ref: '#/components/schemas/UUID'
+        product:
+          $ref: '#/components/schemas/Product'
+        quantity:
+          type: string
+          description: The received magnitude as an exact decimal string in thousandths of a unit of measure.
+          pattern: '^-?\d+(\.\d{1,3})?$'
+          example: "12.500"
+        unit_cost:
+          type: string
+          description: Exact unit cost decimal string in the organization currency, carried to the unit price scale of 4 fractional digits.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+          example: "2500.5000"
+        line_total:
+          type: string
+          description: Server-computed line total, rounded half-up to the unit price scale.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+          example: "31256.2500"
+
+    GoodsReceipt:
+      type: object
+      description: |
+        An immutable commercial record of goods received into a location (ADR 0035). Each line
+        produced one receipt-category stock movement carrying the line's cost and referencing the
+        receipt; the receipt never edits stock balances directly. There is no update or delete path.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        supplier_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        supplier_name:
+          type: string
+          nullable: true
+          description: Snapshot of the supplier name at receipt time.
+        location_id:
+          $ref: '#/components/schemas/UUID'
+        receipt_number:
+          type: integer
+          description: The organization-scoped sequential number.
+        document_number:
+          type: string
+          example: "GRN-000042"
+        status:
+          $ref: '#/components/schemas/GoodsReceiptStatus'
+        received_on:
+          type: string
+          format: date
+          description: The calendar date the goods were received, as YYYY-MM-DD.
+        note:
+          type: string
+          nullable: true
+        total_cost:
+          type: string
+          description: Server-computed receipt total in the organization currency, at the unit price scale.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoodsReceiptLine'
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateSupplierRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        address:
+          type: string
+          maxLength: 255
+          nullable: true
+
+    UpdateSupplierRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        address:
+          type: string
+          maxLength: 255
+          nullable: true
+
+    SupplierResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Supplier'
+
+    PaginatedSuppliersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Supplier'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    CreateGoodsReceiptLineRequest:
+      type: object
+      required: [product_id, quantity, unit_cost]
+      properties:
+        product_id:
+          $ref: '#/components/schemas/UUID'
+        quantity:
+          type: string
+          description: A positive magnitude in canonical decimal form, at most 3 fractional digits.
+          pattern: '^-?\d+(\.\d{1,3})?$'
+        unit_cost:
+          type: string
+          description: A non-negative canonical decimal string at most 4 fractional digits.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+
+    CreateGoodsReceiptRequest:
+      type: object
+      required: [location_id, lines]
+      properties:
+        supplier_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+          description: Omitted for a lightweight one-off purchase without supplier attribution.
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        location_id:
+          $ref: '#/components/schemas/UUID'
+        received_on:
+          type: string
+          format: date
+          description: Defaults to the server's current date.
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateGoodsReceiptLineRequest'
+
+    GoodsReceiptResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GoodsReceipt'
+
+    PaginatedGoodsReceiptsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoodsReceipt'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    InvoiceStatus:
+      type: string
+      description: A draft is editable and carries no number; issue snapshots and freezes; void is terminal (ADR 0036).
+      enum: [draft, issued, voided]
+
+    TaxMode:
+      type: string
+      description: Exclusive adds tax on top of the line totals; inclusive treats the stated price as containing the tax.
+      enum: [exclusive, inclusive]
+
+    NotificationChannelName:
+      type: string
+      description: The logical transport for a delivery (ADR 0037).
+      enum: [email, sms, whatsapp]
+
+    NotificationDeliveryStatus:
+      type: string
+      description: The state of one delivery attempt; delivery state never feeds back into business correctness.
+      enum: [queued, sent, failed]
+
+    TaxSettings:
+      type: object
+      description: Organization-level tax configuration (ADR 0036). One row per organization; issued invoices snapshot it.
+      properties:
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        tax_enabled:
+          type: boolean
+        tax_rate_percent:
+          type: string
+          description: The rate as an exact percentage decimal string at the unit price scale, e.g. "7.5000" for 7.5%. Null when not configured.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+          nullable: true
+        tax_mode:
+          $ref: '#/components/schemas/TaxMode'
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    TaxSettingsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TaxSettings'
+
+    UpdateTaxSettingsRequest:
+      type: object
+      required: [tax_enabled]
+      properties:
+        tax_enabled:
+          type: boolean
+        tax_rate_percent:
+          type: string
+          description: Required (and must be positive) when tax is enabled; canonical decimal at most 4 fractional digits.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+          nullable: true
+        tax_mode:
+          $ref: '#/components/schemas/TaxMode'
+
+    Customer:
+      type: object
+      description: Organization-scoped billing master data. Archived, never deleted; never an authentication identity.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        address:
+          type: string
+          maxLength: 255
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateCustomerRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        address:
+          type: string
+          maxLength: 255
+          nullable: true
+
+    UpdateCustomerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        address:
+          type: string
+          maxLength: 255
+          nullable: true
+
+    CustomerResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Customer'
+
+    PaginatedCustomersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    InvoiceLine:
+      type: object
+      description: One billed line. On an issued invoice every commercial value is a snapshot from issue time.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        invoice_id:
+          $ref: '#/components/schemas/UUID'
+        product_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        description:
+          type: string
+          maxLength: 300
+        quantity:
+          type: string
+          description: Exact decimal string in thousandths of a unit of measure.
+          pattern: '^-?\d+(\.\d{1,3})?$'
+          example: "2.000"
+        unit_price:
+          type: string
+          description: Exact decimal string at the unit price scale.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        discount:
+          type: string
+          description: Per-line discount amount at the unit price scale.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        tax_amount:
+          type: string
+          description: Computed at issue from the snapshot rate and mode; zero on drafts.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        line_total:
+          type: string
+          description: Server-computed; quantity x unit_price - discount, rounded half-up at the unit price scale.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+
+    Invoice:
+      type: object
+      description: |
+        A commercial obligation document (ADR 0036). Drafts are editable and carry no number; issue
+        assigns the sequential document number and freezes the snapshot; void is terminal. An invoice
+        has no stock effect in this slice, and payment state arrives with the Payments domain.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        customer_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        customer_name:
+          type: string
+          nullable: true
+          description: Snapshot of the customer name.
+        invoice_number:
+          type: integer
+          nullable: true
+          description: The organization-scoped sequential number; assigned at issue.
+        document_number:
+          type: string
+          nullable: true
+          example: "INV-000042"
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        issued_at:
+          type: string
+          format: date-time
+          nullable: true
+        voided_at:
+          type: string
+          format: date-time
+          nullable: true
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        currency:
+          type: string
+          description: ISO 4217 currency snapshot.
+          minLength: 3
+          maxLength: 3
+        tax_rate_percent:
+          type: string
+          description: Snapshot rate as a percentage at the unit price scale; null on drafts.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+          nullable: true
+        tax_mode:
+          $ref: '#/components/schemas/TaxMode'
+          nullable: true
+        subtotal:
+          type: string
+          description: Net of tax; in inclusive mode this is grand_total - tax_total.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        discount_total:
+          type: string
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        tax_total:
+          type: string
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        grand_total:
+          type: string
+          description: The amount the customer owes.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        note:
+          type: string
+          nullable: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceLine'
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateInvoiceLineRequest:
+      type: object
+      required: [description, quantity, unit_price]
+      properties:
+        product_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        description:
+          type: string
+          minLength: 1
+          maxLength: 300
+        quantity:
+          type: string
+          description: A positive magnitude, canonical decimal at most 3 fractional digits.
+          pattern: '^-?\d+(\.\d{1,3})?$'
+        unit_price:
+          type: string
+          description: A non-negative canonical decimal at most 4 fractional digits.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        discount:
+          type: string
+          description: A non-negative amount at most 4 fractional digits; must not exceed the line amount.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+
+    CreateInvoiceRequest:
+      type: object
+      required: [lines]
+      properties:
+        customer_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        due_on:
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateInvoiceLineRequest'
+
+    UpdateInvoiceRequest:
+      type: object
+      description: Only a draft is editable; lines are replaced as a whole when present.
+      properties:
+        customer_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateInvoiceLineRequest'
+
+    SendInvoiceRequest:
+      type: object
+      required: [channel]
+      properties:
+        channel:
+          $ref: '#/components/schemas/NotificationChannelName'
+        recipient:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Defaults from the attached customer's email (email channel) or phone (sms/whatsapp).
+
+    InvoiceResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Invoice'
+
+    PaginatedInvoicesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invoice'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    NotificationDelivery:
+      type: object
+      description: One tracked delivery attempt (ADR 0037); not business truth and never mutates the entity it points at.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        entity_type:
+          type: string
+        entity_id:
+          $ref: '#/components/schemas/UUID'
+        channel:
+          $ref: '#/components/schemas/NotificationChannelName'
+        driver:
+          type: string
+          description: The driver that handled the channel, e.g. "mail" or "log".
+        recipient:
+          type: string
+        status:
+          $ref: '#/components/schemas/NotificationDeliveryStatus'
+        error_message:
+          type: string
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at: { type: string, format: date-time }
+
+    NotificationDeliveryResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/NotificationDelivery'
+
+    PaginatedNotificationDeliveriesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationDelivery'
         current_page: { type: integer }
         last_page: { type: integer }
         per_page: { type: integer }
