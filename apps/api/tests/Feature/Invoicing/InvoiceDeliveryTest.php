@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
+use Ramsey\Uuid\Uuid;
 use Tests\Concerns\WithRbac;
 use Tests\TestCase;
 
@@ -226,7 +227,9 @@ class InvoiceDeliveryTest extends TestCase
 
         NotificationDelivery::factory()->for($organization, 'organization')->create([
             'entity_type' => 'invoice',
-            'entity_id' => 'some-other-invoice',
+            // A different invoice than the one being inspected; a real UUID,
+            // because entity_id is a uuid column.
+            'entity_id' => Uuid::uuid7()->toString(),
         ]);
 
         $this->getJson("/api/v1/organizations/{$organization->id}/invoices/{$invoiceId}/deliveries")
