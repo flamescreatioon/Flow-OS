@@ -50,7 +50,6 @@ final class DecimalMath
         return self::divideRoundHalfUp($left * $right, 10 ** $reduction);
     }
 
-
     /**
      * Divide two integers, rounding half-up away from zero on exact halves.
      *
