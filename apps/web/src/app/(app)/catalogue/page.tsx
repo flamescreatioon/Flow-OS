@@ -9,9 +9,7 @@ import {
   archiveProduct,
   restoreProduct,
 } from '@/features/catalogue/service';
-import { CategoryForm } from '@/features/catalogue/category-form';
 import { ProductForm } from '@/features/catalogue/product-form';
-import { UnitOfMeasureForm } from '@/features/catalogue/unit-form';
 import { useActiveOrganization } from '@/features/organizations/active-organization-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,7 +52,6 @@ export default function CataloguePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   useEffect(() => {
     if (!organizationId) return;
@@ -267,91 +264,30 @@ export default function CataloguePage() {
         />
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {editingProduct && (
-          <Card>
-            <CardTitle>Edit product</CardTitle>
-            <div className="mt-4">
-              <ProductForm
-                organizationId={activeOrganization.id}
-                units={units}
-                categories={categories}
-                product={editingProduct}
-                onCreated={() => setReload((current) => current + 1)}
-                onUpdated={(updated) => {
-                  setProducts((current) => ({
-                    ...current,
-                    data: current.data.map((item) =>
-                      item.id === updated.id ? updated : item,
-                    ),
-                  }));
-                  setEditingProduct(null);
-                }}
-                onCancelEdit={() => setEditingProduct(null)}
-              />
-            </div>
-          </Card>
-        )}
-
-        <div className={editingProduct ? 'space-y-4' : 'space-y-4 lg:col-span-2'}>
-          <Card>
-            <CardTitle>Units of measure</CardTitle>
-            {units.length > 0 && (
-              <p className="mt-2 text-sm text-on-surface-variant">
-                {units.map((unit) => unit.code).join(', ')}
-              </p>
-            )}
-            <div className="mt-4">
-              <UnitOfMeasureForm
-                organizationId={activeOrganization.id}
-                onCreated={(unit) => setUnits((current) => [...current, unit])}
-              />
-            </div>
-          </Card>
-
-          <Card>
-            <CardTitle>{editingCategory ? 'Edit category' : 'Categories'}</CardTitle>
-            {categories.length > 0 && !editingCategory && (
-              <ul className="mt-4 space-y-2">
-                {categories.map((category) => (
-                  <li
-                    key={category.id}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-surface-container-high px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-on-surface">
-                        {category.name}
-                      </p>
-                      {category.description && (
-                        <p className="truncate text-xs text-on-surface-variant">
-                          {category.description}
-                        </p>
-                      )}
-                    </div>
-                    <Button variant="ghost" onClick={() => setEditingCategory(category)}>
-                      Edit
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="mt-4">
-              <CategoryForm
-                organizationId={activeOrganization.id}
-                category={editingCategory ?? undefined}
-                onCreated={(category) => setCategories((current) => [...current, category])}
-                onUpdated={(updated) => {
-                  setCategories((current) =>
-                    current.map((item) => (item.id === updated.id ? updated : item)),
-                  );
-                  setEditingCategory(null);
-                }}
-                onCancelEdit={() => setEditingCategory(null)}
-              />
-            </div>
-          </Card>
-        </div>
-      </div>
+      {editingProduct && (
+        <Card>
+          <CardTitle>Edit product</CardTitle>
+          <div className="mt-4">
+            <ProductForm
+              organizationId={activeOrganization.id}
+              units={units}
+              categories={categories}
+              product={editingProduct}
+              onCreated={() => setReload((current) => current + 1)}
+              onUpdated={(updated) => {
+                setProducts((current) => ({
+                  ...current,
+                  data: current.data.map((item) =>
+                    item.id === updated.id ? updated : item,
+                  ),
+                }));
+                setEditingProduct(null);
+              }}
+              onCancelEdit={() => setEditingProduct(null)}
+            />
+          </div>
+        </Card>
+      )}
 
       <p className="text-sm text-on-surface-variant">
         Stocked products appear in{' '}

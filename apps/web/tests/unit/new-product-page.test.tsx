@@ -152,13 +152,20 @@ describe('NewProductPage', () => {
     });
   });
 
-  it('renders the create form and links back to the catalogue', async () => {
+  it('renders the create form, units, and categories sections', async () => {
     renderPage();
 
     expect(await screen.findByRole('heading', { name: 'Add a product' })).toBeInTheDocument();
     // The form renders once the reference data resolves.
     expect(await screen.findByRole('button', { name: 'Create product' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /back to catalogue/i }).length).toBeGreaterThan(0);
+
+    // The units and categories sections moved onto this page.
+    expect(screen.getByRole('heading', { name: 'Units of measure' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Categories' })).toBeInTheDocument();
+    expect(screen.getAllByText('Beverages').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Create unit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create category' })).toBeInTheDocument();
   });
 
   it('creates a product through the form', async () => {
@@ -166,7 +173,7 @@ describe('NewProductPage', () => {
 
     renderPage();
 
-    typeInto(await screen.findByLabelText('Name'), 'Milo 500g');
+    typeInto(await screen.findByLabelText('Name', { selector: '#product-name' }), 'Milo 500g');
     typeInto(screen.getByLabelText('Price'), '2500.00');
 
     await act(async () => {
