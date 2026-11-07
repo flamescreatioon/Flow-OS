@@ -21,7 +21,7 @@ class GoodsReceiptController
         $this->permission($request, $organization, PermissionKey::PurchaseView->value);
         $filters = $request->validated();
 
-        $query = $organization->goodsReceipts()->with(['lines', 'supplier', 'branch', 'location']);
+        $query = $organization->goodsReceipts()->with(['lines.product', 'supplier', 'branch', 'location']);
 
         if (! empty($filters['supplier_id'])) {
             $query->where('supplier_id', $filters['supplier_id']);
