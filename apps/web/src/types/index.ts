@@ -289,3 +289,27 @@ export interface NotificationDelivery {
   sent_at: string | null;
   created_at: string;
 }
+
+// Reporting (see packages/contracts/openapi/v1.yaml, Reporting tags).
+
+export interface RevenueMonthPoint {
+  month: string;
+  total: string;
+}
+
+export interface DashboardSummary {
+  invoiced_total: string;
+  issued_invoices: number;
+  purchases_total: string;
+  customers: number;
+  suppliers: number;
+  products: number;
+  stock_units: string;
+  products_in_stock: number;
+  invoices_by_status: {
+    draft: number;
+    issued: number;
+    voided: number;
+  };
+  revenue_by_month: RevenueMonthPoint[];
+}

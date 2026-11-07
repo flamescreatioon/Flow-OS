@@ -1515,6 +1515,20 @@ paths:
       security: [{ bearerAuth: [] }]
       responses: { '200': { description: Paginated delivery attempts, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedNotificationDeliveriesResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
 
+  /organizations/{organization}/dashboard-summary:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: getDashboardSummary
+      summary: Get the workspace dashboard summary
+      description: |
+        Requires the `organization.view` permission. A derived, presentation-oriented aggregate over
+        the workspace's authoritative records (reporting domain): issued-invoice totals, purchases,
+        master-data counts, stock on hand, invoice status breakdown, and the six-month issued-invoice
+        trend. It never mutates anything and can be recomputed at any time.
+      tags: [Reporting]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Dashboard summary, content: { application/json: { schema: { $ref: '#/components/schemas/DashboardSummaryResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -3381,6 +3395,60 @@ components:
         last_page: { type: integer }
         per_page: { type: integer }
         total: { type: integer }
+
+    DashboardSummaryResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            invoiced_total:
+              type: string
+              description: Sum of grand totals of issued invoices (voided and drafts excluded), exact decimal string at the unit price scale.
+              pattern: '^-?\d+(\.\d{1,4})?$'
+            issued_invoices:
+              type: integer
+              description: Count of issued invoices.
+            purchases_total:
+              type: string
+              description: Sum of goods receipt totals, exact decimal string at the unit price scale.
+              pattern: '^-?\d+(\.\d{1,4})?$'
+            customers:
+              type: integer
+              description: Active (non-archived) customers.
+            suppliers:
+              type: integer
+              description: Active (non-archived) suppliers.
+            products:
+              type: integer
+              description: Active (non-archived) catalogue products.
+            stock_units:
+              type: string
+              description: Net sum of derived stock balances, exact decimal string in thousandths of a unit.
+              pattern: '^-?\d+(\.\d{1,3})?$'
+            products_in_stock:
+              type: integer
+              description: Distinct products with a non-zero balance.
+            invoices_by_status:
+              type: object
+              properties:
+                draft: { type: integer }
+                issued: { type: integer }
+                voided: { type: integer }
+            revenue_by_month:
+              type: array
+              description: The last six calendar months, oldest first; every month is present.
+              items:
+                type: object
+                properties:
+                  month:
+                    type: string
+                    description: Calendar month as YYYY-MM.
+                    pattern: '^\d{4}-\d{2}$'
+                  total:
+                    type: string
+                    description: Issued-invoice grand total for the month, exact decimal string at the unit price scale.
+                    pattern: '^-?\d+(\.\d{1,4})?$'
 
   responses:
     BadRequest:

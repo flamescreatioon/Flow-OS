@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Auth\TokenController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\CatalogueController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\DashboardSummaryController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\InventoryLocationController;
@@ -159,6 +160,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
             Route::get('/invoices/{invoice}/deliveries', [InvoiceController::class, 'deliveries']);
             Route::get('/tax-settings', [TaxSettingsController::class, 'show']);
+            Route::get('/dashboard-summary', [DashboardSummaryController::class, 'show']);
 
             Route::middleware(['verified-writes'])->group(function () {
                 Route::post('/customers', [CustomerController::class, 'store']);
