@@ -110,8 +110,8 @@ class ApiClient {
     return response.json();
   }
 
-  get<T>(endpoint: string) {
-    return this.request<T>(endpoint, { method: 'GET' });
+  get<T>(endpoint: string, headers?: Record<string, string>) {
+    return this.request<T>(endpoint, { method: 'GET', headers });
   }
 
   post<T>(endpoint: string, data?: unknown, headers?: Record<string, string>) {
