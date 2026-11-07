@@ -3,6 +3,7 @@
 namespace Tests\Feature\Reporting;
 
 use App\Models\Customer;
+use App\Models\Expense;
 use App\Models\GoodsReceipt;
 use App\Models\GoodsReceiptLine;
 use App\Models\InventoryLocation;
@@ -58,6 +59,9 @@ class DashboardSummaryTest extends TestCase
         $receipt = GoodsReceipt::factory()->for($organization)->create(['total_cost' => 125025000]);
         GoodsReceiptLine::factory()->for($receipt)->create(['organization_id' => $organization->id]);
 
+        Expense::factory()->for($organization)->create(['amount' => 15000000]);
+        Expense::factory()->for($organization)->voided()->create(['amount' => 99000000]);
+
         Customer::factory()->for($organization)->create();
         Supplier::factory()->for($organization)->create();
         $product = Product::factory()->for($organization)->stocked()->create();
@@ -74,6 +78,8 @@ class DashboardSummaryTest extends TestCase
         $response->assertJsonPath('data.invoiced_total', '4300.0000')
             ->assertJsonPath('data.issued_invoices', 2)
             ->assertJsonPath('data.purchases_total', '12502.5000')
+            ->assertJsonPath('data.expenses_total', '1500.0000')
+            ->assertJsonPath('data.expenses', 1)
             ->assertJsonPath('data.customers', 1)
             ->assertJsonPath('data.suppliers', 1)
             ->assertJsonPath('data.products', 1)
@@ -102,6 +108,8 @@ class DashboardSummaryTest extends TestCase
             ->assertJsonPath('data.invoiced_total', '0.0000')
             ->assertJsonPath('data.issued_invoices', 0)
             ->assertJsonPath('data.purchases_total', '0.0000')
+            ->assertJsonPath('data.expenses_total', '0.0000')
+            ->assertJsonPath('data.expenses', 0)
             ->assertJsonPath('data.customers', 0)
             ->assertJsonPath('data.stock_units', '0.000')
             ->assertJsonPath('data.products_in_stock', 0)

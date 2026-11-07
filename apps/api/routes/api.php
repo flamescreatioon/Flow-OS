@@ -189,3 +189,18 @@ Route::fallback(function () {
         'message' => 'Resource not found.',
     ]], 404);
 });
+use App\Http\Controllers\Api\V1\ExpenseCategoryController;
+use App\Http\Controllers\Api\V1\ExpenseController;
+            Route::get('/expense-categories', [ExpenseCategoryController::class, 'index']);
+            Route::get('/expense-categories/{category}', [ExpenseCategoryController::class, 'show']);
+            Route::get('/expenses', [ExpenseController::class, 'index']);
+            Route::get('/expenses/{expense}', [ExpenseController::class, 'show']);
+
+            Route::middleware(['verified-writes'])->group(function () {
+                Route::post('/expense-categories', [ExpenseCategoryController::class, 'store']);
+                Route::patch('/expense-categories/{category}', [ExpenseCategoryController::class, 'update']);
+                Route::post('/expense-categories/{category}/archive', [ExpenseCategoryController::class, 'archive']);
+                Route::post('/expenses', [ExpenseController::class, 'store'])->middleware('idempotency');
+                Route::patch('/expenses/{expense}', [ExpenseController::class, 'update']);
+                Route::post('/expenses/{expense}/void', [ExpenseController::class, 'void'])->middleware('idempotency');
+            });

@@ -6,6 +6,7 @@ use App\Domain\Catalogue\ValueObjects\UnitPrice;
 use App\Domain\Shared\ValueObjects\Quantity;
 use App\Enums\InvoiceStatus;
 use App\Models\Customer;
+use App\Models\Expense;
 use App\Models\GoodsReceipt;
 use App\Models\Invoice;
 use App\Models\Organization;
@@ -39,6 +40,15 @@ final class DashboardSummaryService
         $purchasesTotal = (int) GoodsReceipt::query()
             ->where('organization_id', $organization->id)
             ->sum('total_cost');
+
+        $expensesTotal = (int) Expense::query()
+            ->where('organization_id', $organization->id)
+            ->where('status', 'recorded')
+            ->sum('amount');
+        $expensesCount = Expense::query()
+            ->where('organization_id', $organization->id)
+            ->where('status', 'recorded')
+            ->count();
 
         $customers = Customer::query()
             ->where('organization_id', $organization->id)
@@ -83,6 +93,8 @@ final class DashboardSummaryService
             'invoiced_total' => UnitPrice::of($invoicedTotal)->toString(),
             'issued_invoices' => $issuedCount,
             'purchases_total' => UnitPrice::of($purchasesTotal)->toString(),
+            'expenses_total' => UnitPrice::of($expensesTotal)->toString(),
+            'expenses' => $expensesCount,
             'customers' => $customers,
             'suppliers' => $suppliers,
             'products' => $products,

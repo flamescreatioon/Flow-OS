@@ -1529,6 +1529,129 @@ paths:
       security: [{ bearerAuth: [] }]
       responses: { '200': { description: Dashboard summary, content: { application/json: { schema: { $ref: '#/components/schemas/DashboardSummaryResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
 
+  /organizations/{organization}/expense-categories:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listExpenseCategories
+      summary: List expense categories
+      description: Requires the `expense_category.view` permission. Ordered by name.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: archived, in: query, description: "`true` lists only archived categories, `false` only active ones.", schema: { type: string, enum: ['true', 'false'], default: 'false' } }
+        - { name: q, in: query, description: Free-text search on name., schema: { type: string, maxLength: 255 } }
+      responses: { '200': { description: Paginated expense categories, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedExpenseCategoriesResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createExpenseCategory
+      summary: Create an expense category
+      description: Requires the `expense_category.create` permission. Names are unique within the organization.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateExpenseCategoryRequest' } } }
+      responses: { '201': { description: Category created, content: { application/json: { schema: { $ref: '#/components/schemas/ExpenseCategoryResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/expense-categories/{category}:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/CategoryId' }
+    get:
+      operationId: getExpenseCategory
+      summary: Get an expense category
+      description: Requires the `expense_category.view` permission.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Category details, content: { application/json: { schema: { $ref: '#/components/schemas/ExpenseCategoryResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    patch:
+      operationId: updateExpenseCategory
+      summary: Update an expense category
+      description: Requires the `expense_category.update` permission. Only the fields present in the body change.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateExpenseCategoryRequest' } } }
+      responses: { '200': { description: Category updated, content: { application/json: { schema: { $ref: '#/components/schemas/ExpenseCategoryResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/expense-categories/{category}/archive:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/CategoryId' }
+    post:
+      operationId: archiveExpenseCategory
+      summary: Archive an expense category
+      description: Requires the `expense_category.archive` permission. Archived categories cannot be used on new expenses. Categories are archived, never deleted.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Category archived, content: { application/json: { schema: { $ref: '#/components/schemas/ExpenseCategoryResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/expenses:
+    parameters: [{ $ref: '#/components/parameters/NestedOrganizationId' }]
+    get:
+      operationId: listExpenses
+      summary: List expenses
+      description: Requires the `expense.view` permission. Ordered most recent first.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: expense_category_id, in: query, schema: { $ref: '#/components/schemas/UUID' } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/ExpenseStatus' } }
+        - { name: payment_method, in: query, schema: { $ref: '#/components/schemas/PaymentMethod' } }
+      responses: { '200': { description: Paginated expenses, content: { application/json: { schema: { $ref: '#/components/schemas/PaginatedExpensesResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    post:
+      operationId: createExpense
+      summary: Record an expense
+      description: |
+        Requires the `expense.create` permission. The amount must be a positive canonical decimal at the unit
+        price scale; the server assigns the sequential document number and the spent-on date defaults to the
+        server's current date (ADR 0039). Expenses are operational records: editable while recorded, void is
+        terminal, no delete path.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateExpenseRequest' } } }
+      responses: { '201': { description: Expense recorded, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/ExpenseResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/expenses/{expense}:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/ExpenseId' }
+    get:
+      operationId: getExpense
+      summary: Get an expense
+      description: Requires the `expense.view` permission.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Expense details, content: { application/json: { schema: { $ref: '#/components/schemas/ExpenseResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '429': { $ref: '#/components/responses/RateLimited' } }
+    patch:
+      operationId: updateExpense
+      summary: Update a recorded expense
+      description: Requires the `expense.update` permission. Only the fields present in the body change. A voided expense cannot be edited.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateExpenseRequest' } } }
+      responses: { '200': { description: Expense updated, content: { application/json: { schema: { $ref: '#/components/schemas/ExpenseResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
+  /organizations/{organization}/expenses/{expense}/void:
+    parameters:
+      - { $ref: '#/components/parameters/NestedOrganizationId' }
+      - { $ref: '#/components/parameters/ExpenseId' }
+    post:
+      operationId: voidExpense
+      summary: Void an expense
+      description: Requires the `expense.void` permission. Void is terminal; the record is retained as evidence and excluded from aggregates. There is no delete path.
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses: { '200': { description: Expense voided, headers: { Idempotent-Replayed: { description: '`true` when the response was replayed from a stored idempotency record.', schema: { type: boolean } } }, content: { application/json: { schema: { $ref: '#/components/schemas/ExpenseResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/EmailNotVerified' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/IdempotencyConflict' }, '422': { $ref: '#/components/responses/ValidationError' }, '429': { $ref: '#/components/responses/RateLimited' } }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1648,6 +1771,12 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    ExpenseId:
+      name: expense
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
 
     IdempotencyKey:
       name: Idempotency-Key
@@ -3415,6 +3544,13 @@ components:
               type: string
               description: Sum of goods receipt totals, exact decimal string at the unit price scale.
               pattern: '^-?\d+(\.\d{1,4})?$'
+            expenses_total:
+              type: string
+              description: Sum of recorded (non-voided) expense amounts, exact decimal string at the unit price scale.
+              pattern: '^-?\d+(\.\d{1,4})?$'
+            expenses:
+              type: integer
+              description: Count of recorded (non-voided) expenses.
             customers:
               type: integer
               description: Active (non-archived) customers.
@@ -3451,6 +3587,212 @@ components:
                     type: string
                     description: Issued-invoice grand total for the month, exact decimal string at the unit price scale.
                     pattern: '^-?\d+(\.\d{1,4})?$'
+
+    ExpenseStatus:
+      type: string
+      description: A recorded expense is editable; void is terminal and the record is kept as evidence (ADR 0039).
+      enum: [recorded, voided]
+
+    PaymentMethod:
+      type: string
+      description: The operational channel the money was paid through; not a settlement engine.
+      enum: [cash, bank_transfer, card, other]
+
+    ExpenseCategory:
+      type: object
+      description: Organization-scoped master data for classifying spending. Archived, never deleted.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Expense:
+      type: object
+      description: |
+        An operational money record (ADR 0039). Recorded expenses are editable; void is terminal and the record
+        is kept as evidence. Expenses never touch stock or the ledger in this slice.
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        organization_id:
+          $ref: '#/components/schemas/UUID'
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        expense_category_id:
+          $ref: '#/components/schemas/UUID'
+        expense_category:
+          $ref: '#/components/schemas/ExpenseCategory'
+        expense_number:
+          type: integer
+          description: The organization-scoped sequential number.
+        document_number:
+          type: string
+          example: "EXP-000042"
+        status:
+          $ref: '#/components/schemas/ExpenseStatus'
+        voided_at:
+          type: string
+          format: date-time
+          nullable: true
+        description:
+          type: string
+          maxLength: 300
+        amount:
+          type: string
+          description: Exact positive decimal string in the organization currency at the unit price scale.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        spent_on:
+          type: string
+          format: date
+          description: The calendar date the money was spent, as YYYY-MM-DD.
+        payee:
+          type: string
+          nullable: true
+          description: Free-text payee in this slice; supplier linking is a later decision.
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethod'
+        note:
+          type: string
+          nullable: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateExpenseCategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          maxLength: 255
+          nullable: true
+
+    UpdateExpenseCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          maxLength: 255
+          nullable: true
+
+    ExpenseCategoryResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ExpenseCategory'
+
+    PaginatedExpenseCategoriesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpenseCategory'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    CreateExpenseRequest:
+      type: object
+      required: [expense_category_id, description, amount]
+      properties:
+        expense_category_id:
+          $ref: '#/components/schemas/UUID'
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        description:
+          type: string
+          minLength: 1
+          maxLength: 300
+        amount:
+          type: string
+          description: A positive canonical decimal at most 4 fractional digits.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        spent_on:
+          type: string
+          format: date
+          description: Defaults to the server's current date.
+        payee:
+          type: string
+          maxLength: 200
+          nullable: true
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethod'
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    UpdateExpenseRequest:
+      type: object
+      properties:
+        expense_category_id:
+          $ref: '#/components/schemas/UUID'
+        branch_id:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        description:
+          type: string
+          minLength: 1
+          maxLength: 300
+        amount:
+          type: string
+          description: A positive canonical decimal at most 4 fractional digits.
+          pattern: '^-?\d+(\.\d{1,4})?$'
+        spent_on:
+          type: string
+          format: date
+        payee:
+          type: string
+          maxLength: 200
+          nullable: true
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethod'
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    ExpenseResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Expense'
+
+    PaginatedExpensesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Expense'
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
 
   responses:
     BadRequest:

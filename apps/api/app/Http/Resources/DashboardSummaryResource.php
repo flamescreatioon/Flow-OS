@@ -22,6 +22,8 @@ class DashboardSummaryResource extends JsonResource
             'invoiced_total' => $data['invoiced_total'],
             'issued_invoices' => $data['issued_invoices'],
             'purchases_total' => $data['purchases_total'],
+            'expenses_total' => $data['expenses_total'],
+            'expenses' => $data['expenses'],
             'customers' => $data['customers'],
             'suppliers' => $data['suppliers'],
             'products' => $data['products'],

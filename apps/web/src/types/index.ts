@@ -314,3 +314,41 @@ export interface DashboardSummary {
   };
   revenue_by_month: RevenueMonthPoint[];
 }
+  expenses_total: string;
+  expenses: number;
+
+// Finance / Expenses (see packages/contracts/openapi/v1.yaml, Finance tags).
+
+export type ExpenseStatus = 'recorded' | 'voided';
+
+export type PaymentMethod = 'cash' | 'bank_transfer' | 'card' | 'other';
+
+export interface ExpenseCategory {
+  id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Expense {
+  id: string;
+  organization_id: string;
+  branch_id: string | null;
+  expense_category_id: string;
+  expense_category?: ExpenseCategory;
+  expense_number: number;
+  document_number: string;
+  status: ExpenseStatus;
+  voided_at: string | null;
+  description: string;
+  amount: string;
+  spent_on: string;
+  payee: string | null;
+  payment_method: PaymentMethod;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}

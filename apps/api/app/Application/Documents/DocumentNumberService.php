@@ -22,12 +22,15 @@ final class DocumentNumberService
 
     public const INVOICE = 'invoice';
 
+    public const EXPENSE = 'expense';
+
     /**
      * The wire format prefix for each document type.
      */
     private const PREFIXES = [
         self::GOODS_RECEIPT => 'GRN',
         self::INVOICE => 'INV',
+        self::EXPENSE => 'EXP',
     ];
 
     public function allocateNext(Organization $organization, string $documentType): int

@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   TrendingUp,
   Truck,
+  Wallet,
   UserRound,
   Users,
   Warehouse,
@@ -216,6 +217,13 @@ function DashboardContent({
               hint="Goods received into stock"
               icon={ShoppingBag}
               href="/purchasing"
+            />
+            <SummaryCard
+              label="Expenses"
+              value={formatMoney(summary.expenses_total, currency)}
+              hint="Recorded business spending"
+              icon={Wallet}
+              href="/expenses"
             />
             <SummaryCard
               label="Stock on hand"

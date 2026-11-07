@@ -202,3 +202,5 @@ describe('DashboardPage', () => {
     expect(screen.queryByText('Amount made')).not.toBeInTheDocument();
   });
 });
+  expenses_total: '1500.0000',
+  expenses: 1,

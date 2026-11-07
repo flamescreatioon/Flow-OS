@@ -126,6 +126,15 @@ class Organization extends Tenant
         return $this->hasMany(Invoice::class);
     }
 
+    public function expenseCategories(): HasMany
+    {
+        return $this->hasMany(ExpenseCategory::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
 
     public function getTenantDatabaseName(): string
     {

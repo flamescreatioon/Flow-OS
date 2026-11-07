@@ -50,6 +50,14 @@ enum PermissionKey: string
     case InvoiceVoid = 'invoice.void';
     case InvoiceSend = 'invoice.send';
     case InvoiceManage = 'invoice.manage';
+    case ExpenseCategoryView = 'expense_category.view';
+    case ExpenseCategoryCreate = 'expense_category.create';
+    case ExpenseCategoryUpdate = 'expense_category.update';
+    case ExpenseCategoryArchive = 'expense_category.archive';
+    case ExpenseView = 'expense.view';
+    case ExpenseCreate = 'expense.create';
+    case ExpenseUpdate = 'expense.update';
+    case ExpenseVoid = 'expense.void';
 
     public static function keys(): array
     {
