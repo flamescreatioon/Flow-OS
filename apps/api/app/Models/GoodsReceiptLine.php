@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Domain\Catalogue\ValueObjects\UnitPrice;
 use App\Domain\Shared\ValueObjects\Quantity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Ramsey\Uuid\Uuid;
@@ -17,6 +18,7 @@ use Ramsey\Uuid\Uuid;
  */
 class GoodsReceiptLine extends Model
 {
+    use HasFactory;
     protected $table = 'goods_receipt_lines';
 
     protected $keyType = 'string';
