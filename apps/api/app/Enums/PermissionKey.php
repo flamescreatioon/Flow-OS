@@ -33,6 +33,12 @@ enum PermissionKey: string
     case StockAdjust = 'stock.adjust';
     case StockTransfer = 'stock.transfer';
     case StockCount = 'stock.count';
+    case SupplierView = 'supplier.view';
+    case SupplierCreate = 'supplier.create';
+    case SupplierUpdate = 'supplier.update';
+    case SupplierArchive = 'supplier.archive';
+    case PurchaseView = 'purchase.view';
+    case PurchaseReceive = 'purchase.receive';
 
     public static function keys(): array
     {

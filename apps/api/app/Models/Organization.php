@@ -106,6 +106,16 @@ class Organization extends Tenant
         return $this->hasMany(StockBalance::class);
     }
 
+    public function suppliers(): HasMany
+    {
+        return $this->hasMany(Supplier::class);
+    }
+
+    public function goodsReceipts(): HasMany
+    {
+        return $this->hasMany(GoodsReceipt::class);
+    }
+
     public function getTenantDatabaseName(): string
     {
         return 'flowos_'.$this->id;

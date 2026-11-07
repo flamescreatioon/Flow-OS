@@ -6,8 +6,12 @@ export async function listOrganizations(): Promise<PaginatedResponse<Organizatio
 }
 
 export async function listBranches(organizationId: string): Promise<PaginatedResponse<Branch>> {
+  // The branches group sits behind the tenant middleware, which resolves
+  // context from the X-Organization-ID header (selection only; authorization
+  // still happens server-side against the active membership).
   return api.get<PaginatedResponse<Branch>>(
     `/organizations/${organizationId}/branches?per_page=100`,
+    { 'X-Organization-ID': organizationId },
   );
 }
 

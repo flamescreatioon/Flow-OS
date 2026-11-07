@@ -165,3 +165,48 @@ export interface StockBalance {
   location?: InventoryLocation;
   updated_at: string;
 }
+
+// Purchasing (see packages/contracts/openapi/v1.yaml, Purchasing tags).
+
+export type GoodsReceiptStatus = 'recorded';
+
+export interface Supplier {
+  id: string;
+  organization_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GoodsReceiptLine {
+  id: string;
+  goods_receipt_id: string;
+  product_id: string;
+  product?: Product;
+  quantity: string;
+  unit_cost: string;
+  line_total: string;
+}
+
+export interface GoodsReceipt {
+  id: string;
+  organization_id: string;
+  branch_id: string | null;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  location_id: string;
+  receipt_number: number;
+  document_number: string;
+  status: GoodsReceiptStatus;
+  received_on: string;
+  note: string | null;
+  total_cost: string;
+  lines: GoodsReceiptLine[];
+  created_at: string;
+  updated_at: string;
+}
+

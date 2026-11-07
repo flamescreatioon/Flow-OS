@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Auth\TokenController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\CatalogueController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\InventoryLocationController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MembershipController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\StockController;
+use App\Http\Controllers\Api\V1\SupplierController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -126,6 +128,24 @@ Route::prefix('v1')->group(function () {
                 Route::post('/stock-transfers', [StockController::class, 'storeTransfer'])->middleware('idempotency');
             });
         });
+
+        // Purchasing. The organization in the path is the scope and the
+        // permission check is the authority. A goods receipt is finalized on
+        // creation (ADR 0035), so it has no update or delete path.
+        Route::prefix('organizations/{organization}')->group(function () {
+            Route::get('/suppliers', [SupplierController::class, 'index']);
+            Route::get('/suppliers/{supplier}', [SupplierController::class, 'show']);
+            Route::get('/goods-receipts', [GoodsReceiptController::class, 'index']);
+            Route::get('/goods-receipts/{receipt}', [GoodsReceiptController::class, 'show']);
+
+            Route::middleware(['verified-writes'])->group(function () {
+                Route::post('/suppliers', [SupplierController::class, 'store']);
+                Route::patch('/suppliers/{supplier}', [SupplierController::class, 'update']);
+                Route::post('/suppliers/{supplier}/archive', [SupplierController::class, 'archive']);
+                Route::post('/goods-receipts', [GoodsReceiptController::class, 'store'])->middleware('idempotency');
+            });
+        });
+
     });
 
     // API routes will be added here

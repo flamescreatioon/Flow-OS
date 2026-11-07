@@ -15,6 +15,7 @@ import {
   ReceiptText,
   Settings,
   ShoppingCart,
+  Truck,
   Wallet,
   Waves,
   X,
@@ -42,6 +43,7 @@ const workspaceLinks: NavLink[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Catalogue', href: '/catalogue', icon: Package },
   { label: 'Inventory', href: '/inventory', icon: Boxes },
+  { label: 'Purchasing', href: '/purchasing', icon: Truck },
   { label: 'Organizations', href: '/organizations', icon: Building2 },
 ];
 
